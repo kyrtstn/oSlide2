@@ -75,7 +75,6 @@ const ProjectManager = {
       const data = await window.electronAPI.readFile(p.path);
       if (data) return { project: p, slideData: data };
     }
-    // Fallback: return project metadata and empty slides
     return { project: p, slideData: { version: '1.0', theme: 'default', slides: [] } };
   },
 
@@ -109,7 +108,6 @@ const ProjectManager = {
     const newId = 'proj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
     const now = new Date().toISOString();
     const dup = { ...p, id: newId, name: p.name + ' (Kopya)', created: now, lastModified: now, path: null, favorite: false };
-    // Copy file if original has a path
     if (p.path && window.electronAPI?.duplicateFile) {
       const newPath = await window.electronAPI.duplicateFile({ sourcePath: p.path, newId, name: dup.name });
       if (newPath) dup.path = newPath;
@@ -154,16 +152,6 @@ const ProjectManager = {
   async getFavorites() {
     await this.init();
     return this.config.projects.filter(p => p.favorite);
-  },
-
-  async getAll() {
-    await this.init();
-    const sorted = [...this.config.projects].sort((a, b) => {
-      if (a.favorite && !b.favorite) return -1;
-      if (!a.favorite && b.favorite) return 1;
-      return new Date(b.lastModified) - new Date(a.lastModified);
-    });
-    return sorted;
   },
 
   async getSettings() {

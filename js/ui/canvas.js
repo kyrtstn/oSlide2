@@ -9,10 +9,8 @@
     const canvas = document.getElementById('slide-container');
     if (!canvas) return;
 
-    // Clicked outside elements
     if (!el) {
       if (!e.target.closest('.rh')) {
-        // Deselect
         document.querySelectorAll('.canvas-el.selected').forEach(d => d.classList.remove('selected'));
         App.sel = null;
         hidePanel();
@@ -21,17 +19,14 @@
       return;
     }
 
-    // Resize handle?
     const rh = e.target.closest('.rh');
     if (rh) {
       startResize(el, rh, e);
       return;
     }
 
-    // Select element
     const id = el.dataset.id;
     if (id) {
-      // Update selection visual without full re-render
       document.querySelectorAll('.canvas-el.selected').forEach(d => d.classList.remove('selected'));
       el.classList.add('selected');
       App.sel = id;
@@ -40,9 +35,8 @@
       updateToolbar();
     }
 
-    // Start drag (but not on text element that's being edited)
     if (el.classList.contains('text-el') && el.contentEditable === 'true' && e.target === el) {
-      return; // Let text editing work
+      return;
     }
     startDrag(el, e);
   }
@@ -135,7 +129,6 @@
     handle = null;
   }
 
-  // Text editing
   function onTextBlur(e) {
     const d = e.target.closest('.canvas-el.text-el');
     if (!d) return;
@@ -154,8 +147,8 @@
     if (e.target.closest('.canvas-el.text-el')) editing = true;
   }
 
-  // Editor context menu
   let ctxElId = null;
+
   function showEditorCtx(e, elId) {
     ctxElId = elId;
     const menu = document.getElementById('editor-ctx-menu');
@@ -164,6 +157,7 @@
     menu.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
     menu.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
   }
+
   function hideEditorCtx() {
     const menu = document.getElementById('editor-ctx-menu');
     if (menu) menu.classList.add('hidden');
@@ -176,7 +170,6 @@
     e.preventDefault();
     e.stopPropagation();
     hideEditorCtx();
-    // Select the element first
     document.querySelectorAll('.canvas-el.selected').forEach(d => d.classList.remove('selected'));
     el.classList.add('selected');
     App.sel = el.dataset.id;
@@ -200,7 +193,6 @@
     }
   }
 
-  // File drop
   function onDrop(e) {
     e.preventDefault();
     const files = e.dataTransfer.files;
@@ -215,7 +207,7 @@
           const x = e.clientX - (rect?.left || 0);
           const y = e.clientY - (rect?.top || 0);
           save();
-          const el = { id: id(), type: 'image', src: ev.target.result, x: Math.max(0,x), y: Math.max(0,y), width: 300, height: 225 };
+          const el = { id: id(), type: 'image', src: ev.target.result, x: Math.max(0, x), y: Math.max(0, y), width: 300, height: 225 };
           s.elements.push(el);
           App.sel = el.id;
           renderSlide();
@@ -236,7 +228,6 @@
     document.addEventListener('blur', onTextBlur, true);
     document.addEventListener('focus', onTextFocus, true);
 
-    // Right-click context menu
     const sc = document.getElementById('slide-container');
     if (sc) {
       sc.addEventListener('contextmenu', onCtxMenu);
@@ -246,7 +237,6 @@
     const ctxMenu = document.getElementById('editor-ctx-menu');
     if (ctxMenu) {
       ctxMenu.addEventListener('click', onCtxClick);
-      // Hide on click outside
       document.addEventListener('click', (e) => {
         if (!e.target.closest('#editor-ctx-menu')) hideEditorCtx();
       });

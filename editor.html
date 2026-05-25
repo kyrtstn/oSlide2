@@ -111,7 +111,22 @@
       </div>
       <div class="settings-body">
         <div class="settings-tab-content active" id="tab-general">
-          <div class="sg"><label class="sg-label">Tema</label><select id="set-theme"><option value="dark">Koyu</option><option value="light">Açık</option></select></div>
+          <div class="sg"><label class="sg-label">Tema</label>
+            <div class="theme-cards">
+              <div class="theme-card" data-theme="dark">
+                <div class="theme-card-preview theme-card-dark"></div>
+                <span>Koyu</span>
+              </div>
+              <div class="theme-card" data-theme="light">
+                <div class="theme-card-preview theme-card-light"></div>
+                <span>Açık</span>
+              </div>
+              <div class="theme-card" data-theme="system">
+                <div class="theme-card-preview theme-card-system"></div>
+                <span>Sistem</span>
+              </div>
+            </div>
+          </div>
           <div class="sg"><label class="sg-label">Dil</label><select id="set-language"><option value="tr">Türkçe</option><option value="en">English</option></select></div>
           <div class="sg"><label class="sg-label"><span>Otomatik Kaydet</span><input type="checkbox" id="set-autosave"></label></div>
           <div class="sg" id="sg-autosave-interval"><label class="sg-label">Kaydetme Aralığı</label><select id="set-autosave-interval"><option value="30">30 saniye</option><option value="60">1 dakika</option><option value="120">2 dakika</option><option value="300">5 dakika</option></select></div>
@@ -169,11 +184,15 @@
   </div>
 
   <script src="node_modules/lucide/dist/umd/lucide.min.js"></script>
-  <script src="js/editorState.js"></script>
-  <script src="js/editorActions.js"></script>
-  <script src="js/editorUI.js"></script>
-  <script src="js/editor.js"></script>
-  <script src="js/canvas.js"></script>
-  <script src="js/fileManager.js"></script>
+  <script src="js/services/theme.js"></script>
+  <script src="js/services/shortcuts.js"></script>
+  <script src="js/services/i18n.js"></script>
+  <script src="js/core/state.js"></script>
+  <script src="js/core/actions.js"></script>
+  <script src="js/ui/renderer.js"></script>
+  <script src="js/ui/panels.js"></script>
+  <script src="js/ui/canvas.js"></script>
+  <script src="js/services/fileManager.js"></script>
+  <script src="js/pages/editor.js"></script>
 </body>
 </html>

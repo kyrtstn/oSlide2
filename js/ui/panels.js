@@ -1,0 +1,94 @@
+function showPanel(el) {
+  const panel = document.getElementById('panel');
+  const body = document.getElementById('panel-body');
+  if (!panel || !body) return;
+  panel.classList.remove('panel-hidden');
+  let html = '';
+
+  function f(label, key, type, opts) {
+    const v = el[key] !== undefined ? el[key] : '';
+    if (type === 'n') {
+      html += `<div class="pg"><label class="pg-label">${label}</label><input type="number" data-k="${key}" value="${v}" ${opts?.min ? `min="${opts.min}"` : ''} ${opts?.step ? `step="${opts.step}"` : ''}></div>`;
+    } else if (type === 't') {
+      html += `<div class="pg"><label class="pg-label">${label}</label><input type="text" data-k="${key}" value="${esc(String(v))}"></div>`;
+    } else if (type === 'c') {
+      html += `<div class="pg"><label class="pg-label">${label} <input type="color" data-k="${key}" value="${v || '#000000'}"></label></div>`;
+    } else if (type === 's') {
+      html += `<div class="pg"><label class="pg-label">${label}</label><select data-k="${key}">${(opts?.options || []).map(o => `<option value="${o.v}"${v === o.v ? ' selected' : ''}>${o.l}</option>`).join('')}</select></div>`;
+    }
+  }
+
+  function esc(s) {
+    return String(s).replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  html += '<div class="pg-row">';
+  f('X', 'x', 'n');
+  f('Y', 'y', 'n');
+  html += '</div><div class="pg-row">';
+  f('W', 'width', 'n', { min: 10 });
+  f('H', 'height', 'n', { min: 10 });
+  html += '</div>';
+  html += '<div class="pg-row">';
+  f('Dönüş', 'rotation', 'n', { min: 0, step: 1 });
+  f('Opaklık', 'opacity', 'n', { min: 0, step: 0.1 });
+  html += '</div>';
+
+  if (el.type === 'text') {
+    f('İçerik', 'content', 't');
+    f('Arkaplan', 'bgColor', 'c');
+    f('Yazı Tipi', 'fontFamily', 's', {
+      options: 'Arial,Helvetica,Georgia,Times New Roman,Courier New,Verdana'.split(',').map(x => ({ v: x, l: x }))
+    });
+    html += '<div class="pg-row">';
+    f('Boyut', 'fontSize', 'n', { min: 8 });
+    f('Renk', 'color', 'c');
+    html += '</div>';
+  }
+
+  if (el.type === 'rect' || el.type === 'circle') {
+    html += '<div class="pg-row">';
+    f('Dolgu', 'fill', 'c');
+    f('Kenar', 'borderColor', 'c');
+    html += '</div><div class="pg-row">';
+    f('Kalınlık', 'borderWidth', 'n', { min: 0 });
+    if (el.type === 'rect') f('Köşe', 'borderRadius', 'n', { min: 0 });
+    html += '</div>';
+  }
+
+  if (el.type === 'image') f('Kaynak', 'src', 't');
+  if (el.type === 'arrow') {
+    html += '<div class="pg-row">';
+    f('Renk', 'fill', 'c');
+    f('Kalınlık', 'borderWidth', 'n', { min: 1 });
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
+  body.querySelectorAll('input,select').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const k = inp.dataset.k;
+      let v = inp.value;
+      if (inp.type === 'number') v = parseFloat(v);
+      if (inp.type === 'number' && isNaN(v)) return;
+      const e = selEl();
+      if (e) updEl(e.id, { [k]: v });
+      updateToolbar();
+    });
+    inp.addEventListener('input', () => {
+      if (inp.type !== 'color') return;
+      const k = inp.dataset.k;
+      const v = inp.value;
+      const e = selEl();
+      if (e) updEl(e.id, { [k]: v });
+    });
+  });
+}
+
+function hidePanel() {
+  const panel = document.getElementById('panel');
+  if (panel) panel.classList.add('panel-hidden');
+}
+
+window.showPanel = showPanel;
+window.hidePanel = hidePanel;

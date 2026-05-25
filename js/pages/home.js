@@ -78,10 +78,9 @@
       grid.appendChild(card);
     });
 
-    // Recent
     const recentProjects = await ProjectManager.getRecent();
     const recentIds = new Set(recentProjects.map(r => r.id));
-    const recentCards = projects.filter(p => recentIds.has(p.id) && p.id !== projects[projects.length-1]?.id);
+    const recentCards = projects.filter(p => recentIds.has(p.id) && p.id !== projects[projects.length - 1]?.id);
     if (recentCards.length > 0) {
       recent.classList.remove('hidden');
       recentList.innerHTML = '';
@@ -108,15 +107,12 @@
   }
 
   function bindEvents() {
-    // New project
     document.getElementById('new-project-btn')?.addEventListener('click', showNewDialog);
     document.getElementById('welcome-new-btn')?.addEventListener('click', showNewDialog);
 
-    // Open file
     document.getElementById('open-file-btn')?.addEventListener('click', openFileDialog);
     document.getElementById('welcome-open-btn')?.addEventListener('click', openFileDialog);
 
-    // Search
     document.getElementById('search-input')?.addEventListener('input', async (e) => {
       const q = e.target.value.trim();
       if (!q) { render(); return; }
@@ -124,19 +120,16 @@
       renderSearchResults(results);
     });
 
-    // New project dialog
     document.getElementById('dialog-close')?.addEventListener('click', closeDialog);
     document.getElementById('dialog-cancel')?.addEventListener('click', closeDialog);
     document.getElementById('dialog-confirm')?.addEventListener('click', confirmNew);
     document.getElementById('project-name-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') confirmNew(); });
 
-    // Rename dialog
     document.getElementById('rename-close')?.addEventListener('click', closeRename);
     document.getElementById('rename-cancel')?.addEventListener('click', closeRename);
     document.getElementById('rename-confirm')?.addEventListener('click', confirmRename);
     document.getElementById('rename-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') confirmRename(); });
 
-    // Context menu actions
     document.getElementById('fav-filter-btn')?.addEventListener('click', () => {
       favFilterActive = !favFilterActive;
       render();
@@ -163,32 +156,32 @@
           break;
       }
     });
+
     document.getElementById('settings-btn')?.addEventListener('click', openSettings);
     document.getElementById('settings-close')?.addEventListener('click', closeSettings);
     document.getElementById('settings-cancel')?.addEventListener('click', closeSettings);
     document.getElementById('settings-save')?.addEventListener('click', saveSettings);
+
     document.querySelectorAll('.settings-tab').forEach(tab => {
       tab.addEventListener('click', () => switchSettingsTab(tab.dataset.tab));
     });
+
     document.getElementById('about-github')?.addEventListener('click', (e) => {
       e.preventDefault();
       if (window.electronAPI) window.electronAPI.openExternal('https://github.com/not0kkinex/oSlide2');
     });
 
-    // Refresh when returning from editor
     if (window.electronAPI?.onRefreshHome) {
       window.electronAPI.onRefreshHome(async () => {
         await ProjectManager.reload();
         render();
       });
     }
-    // Also refresh when window gets focus (for manual returns)
     window.addEventListener('focus', async () => {
       await ProjectManager.reload();
       render();
     });
 
-    // Init Lucide icons
     if (window.lucide) lucide.createIcons();
   }
 
@@ -210,7 +203,6 @@
     closeDialog();
     const result = await ProjectManager.create(name, template);
     if (result && window.electronAPI) {
-      // Save the initial slide data to a file
       if (window.electronAPI.createProjectFile) {
         const filePath = await window.electronAPI.createProjectFile({
           projectId: result.project.id,
@@ -219,7 +211,6 @@
         });
         if (filePath) {
           result.project.path = filePath;
-          // Update ProjectManager cached config
           const pmP = ProjectManager.config.projects.find(pr => pr.id === result.project.id);
           if (pmP) pmP.path = filePath;
         }
@@ -233,7 +224,6 @@
     if (result && window.electronAPI) {
       window.electronAPI.openEditor({ ...result.slideData, _projectId: result.project.id, _projectName: result.project.name });
     } else if (result) {
-      // Fallback for browser testing
       localStorage.setItem('presentationData', JSON.stringify(result.slideData));
       localStorage.setItem('oslide2_currentProject', JSON.stringify(result.project));
       window.location.href = 'editor.html';
@@ -262,7 +252,6 @@
     ctxTarget = null;
   }
 
-  // Hide context menu on click outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#ctx-menu')) hideCtx();
   });
@@ -305,7 +294,6 @@
       slideData: result.slideData
     });
     if (filePath) {
-      // Update project path
       result.project.path = filePath;
       const pmP = ProjectManager.config.projects.find(pr => pr.id === id);
       if (pmP) pmP.path = filePath;
@@ -320,10 +308,8 @@
     const fileName = result.filePath.split(/[/\\]/).pop().replace('.slidelab', '');
     const created = await ProjectManager.create(fileName);
     if (!created) return;
-    // Copy slide data
     const pmP = ProjectManager.config.projects.find(pr => pr.id === created.project.id);
     if (pmP) {
-      // Save imported data to project file
       if (window.electronAPI.createProjectFile) {
         const filePath = await window.electronAPI.createProjectFile({
           projectId: created.project.id,
@@ -385,7 +371,6 @@
   async function openSettings() {
     const settings = await ProjectManager.getSettings();
     settingsCache = { ...settings };
-    setSettingField('set-theme', settings.theme);
     setSettingField('set-language', settings.language);
     setSettingField('set-autosave', settings.autoSave);
     setSettingField('set-autosave-interval', settings.autoSaveInterval);
@@ -398,7 +383,15 @@
     setSettingField('set-canvas-bg', settings.canvasBg);
     setSettingField('set-auto-panel', settings.autoOpenPanel);
     setSettingField('set-thumb-size', settings.thumbSize);
+
     document.getElementById('settings-overlay').classList.remove('hidden');
+
+    // Set theme cards
+    const themeCards = document.querySelectorAll('.theme-card');
+    themeCards.forEach(card => {
+      card.classList.toggle('active', card.dataset.theme === settings.theme);
+    });
+
     if (window.lucide) lucide.createIcons();
   }
 
@@ -420,9 +413,10 @@
     document.getElementById(`tab-${tabId}`)?.classList.add('active');
   }
 
-  async function saveSettings() {
-    const s = {
-      theme: document.getElementById('set-theme')?.value,
+  function getSettingsValues() {
+    const activeCard = document.querySelector('.theme-card.active');
+    return {
+      theme: activeCard?.dataset?.theme || 'dark',
       language: document.getElementById('set-language')?.value,
       autoSave: document.getElementById('set-autosave')?.checked,
       autoSaveInterval: parseInt(document.getElementById('set-autosave-interval')?.value) || 60,
@@ -436,40 +430,37 @@
       autoOpenPanel: document.getElementById('set-auto-panel')?.checked,
       thumbSize: document.getElementById('set-thumb-size')?.value
     };
-    await ProjectManager.updateSettings(s);
-    settingsCache = s;
-    applyTheme(s.theme);
-    closeSettings();
   }
 
-  function applyTheme(theme) {
-    if (theme === 'light') {
-      document.documentElement.style.setProperty('--bg', '#f5f5f5');
-      document.documentElement.style.setProperty('--surface', '#ffffff');
-      document.documentElement.style.setProperty('--surface2', '#f0f0f0');
-      document.documentElement.style.setProperty('--surface3', '#e0e0e0');
-      document.documentElement.style.setProperty('--border', '#d0d0d0');
-      document.documentElement.style.setProperty('--text', '#222222');
-      document.documentElement.style.setProperty('--text2', '#888888');
-    } else {
-      document.documentElement.style.setProperty('--bg', '#0a0a0a');
-      document.documentElement.style.setProperty('--surface', '#141414');
-      document.documentElement.style.setProperty('--surface2', '#1e1e1e');
-      document.documentElement.style.setProperty('--surface3', '#2a2a2a');
-      document.documentElement.style.setProperty('--border', '#2e2e2e');
-      document.documentElement.style.setProperty('--text', '#e8e8e8');
-      document.documentElement.style.setProperty('--text2', '#888888');
-    }
+  async function saveSettings() {
+    const s = getSettingsValues();
+    await ProjectManager.updateSettings(s);
+    settingsCache = s;
+    ThemeManager.setTheme(s.theme);
+    I18n.setLocale(s.language || 'tr');
+    closeSettings();
   }
 
   async function loadTheme() {
     const settings = await ProjectManager.getSettings();
-    applyTheme(settings.theme || 'dark');
+    ThemeManager.init(settings.theme || 'dark');
   }
 
   async function init() {
     await ProjectManager.init();
     await loadTheme();
+    const langSettings = await ProjectManager.getSettings();
+    I18n.init(langSettings.language || 'tr');
+
+    // Init theme cards preview
+    document.querySelectorAll('.theme-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        ThemeManager.setTheme(card.dataset.theme);
+      });
+    });
+
     render();
     bindEvents();
     document.addEventListener('keydown', e => {
@@ -498,7 +489,7 @@
     return new Date(dateStr).toLocaleDateString('tr-TR');
   }
 
-  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
