@@ -28,6 +28,7 @@ function selectSlide(i) {
   if (i < 0 || i >= App.slides.length) return;
   App.cur = i;
   App.sel = null;
+  App.selectedIds = [];
   renderAll();
   hidePanel();
 }
@@ -72,11 +73,13 @@ function addEl(type, props) {
 }
 
 function delEl() {
-  if (!App.sel) return;
+  const ids = App.selectedIds?.length ? App.selectedIds : (App.sel ? [App.sel] : [])
+  if (!ids.length) return;
   save();
   const s = slide();
   if (!s) return;
-  s.elements = s.elements.filter(e => e.id !== App.sel);
+  s.elements = s.elements.filter(e => !ids.includes(e.id));
+  App.selectedIds = []
   App.sel = null;
   renderSlide();
   renderThumbs();
@@ -94,25 +97,36 @@ function updEl(id, props) {
 }
 
 function copyEl() {
-  const e = selEl();
-  if (!e) return;
-  App.clipboard = clone(e);
+  const ids = App.selectedIds?.length ? App.selectedIds : (App.sel ? [App.sel] : [])
+  if (!ids.length) return;
+  const s = slide()
+  if (!s) return
+  App.clipboard = ids.map(eid => {
+    const el = s.elements.find(e => e.id === eid)
+    return el ? clone(el) : null
+  }).filter(Boolean)
 }
 
 function pasteEl() {
   if (!App.clipboard) return;
+  const items = Array.isArray(App.clipboard) ? App.clipboard : [App.clipboard]
+  if (!items.length) return;
   save();
   const s = slide();
   if (!s) return;
-  const e = clone(App.clipboard);
-  e.id = id();
-  e.x += 20;
-  e.y += 20;
-  s.elements.push(e);
-  App.sel = e.id;
+  const pasted = items.map(e => {
+    const c = clone(e);
+    c.id = id();
+    c.x += 20;
+    c.y += 20;
+    return c;
+  });
+  s.elements.push(...pasted);
+  App.selectedIds = pasted.map(e => e.id)
+  App.sel = pasted[pasted.length - 1]?.id || null;
   renderSlide();
   renderThumbs();
-  showPanel(e);
+  if (pasted.length === 1) showPanel(pasted[0]);
   updateToolbar();
 }
 

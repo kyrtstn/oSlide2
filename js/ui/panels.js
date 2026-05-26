@@ -5,6 +5,10 @@ function showPanel(el) {
   panel.classList.remove('panel-hidden');
   let html = '';
 
+  if (App.selectedIds?.length > 1) {
+    html += `<div class="pg-section-label" style="text-align:center;color:var(--text-muted)">${App.selectedIds.length} eleman seçili</div>`
+  }
+
   function f(label, key, type, opts) {
     const v = el[key] !== undefined ? el[key] : '';
     if (type === 'n') {

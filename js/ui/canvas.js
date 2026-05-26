@@ -78,12 +78,14 @@
 
     if (!el) {
       if (!e.target.closest('.rh')) {
-        document.querySelectorAll('.canvas-el.selected').forEach(d => d.classList.remove('selected'));
-        App.sel = null;
-        hidePanel();
-        updateToolbar();
+        if (!e.shiftKey) {
+          App.selectedIds = []
+          App.sel = null
+          hidePanel()
+          updateToolbar()
+        }
       }
-      return;
+      return
     }
 
     const rh = e.target.closest('.rh');
@@ -94,12 +96,28 @@
 
     const id = el.dataset.id;
     if (id) {
-      document.querySelectorAll('.canvas-el.selected').forEach(d => d.classList.remove('selected'));
-      el.classList.add('selected');
-      App.sel = id;
-      const sel = selEl();
-      if (sel) showPanel(sel);
-      updateToolbar();
+      if (e.shiftKey) {
+        const idx = App.selectedIds.indexOf(id)
+        if (idx >= 0) {
+          App.selectedIds.splice(idx, 1)
+        } else {
+          App.selectedIds.push(id)
+        }
+        if (App.selectedIds.length === 0) {
+          App.sel = null
+          hidePanel()
+        } else {
+          App.sel = App.selectedIds[App.selectedIds.length - 1]
+          const sel = selEl()
+          if (sel) showPanel(sel)
+        }
+      } else {
+        App.selectedIds = [id]
+        App.sel = id
+        const sel = selEl()
+        if (sel) showPanel(sel)
+      }
+      updateToolbar()
     }
 
     if ((e.ctrlKey || e.metaKey) && el.classList.contains('text-el')) {
@@ -114,6 +132,8 @@
     startDrag(el, e);
   }
 
+  let dragOrigins = []
+
   function startDrag(el, e) {
     dragging = true;
     target = el;
@@ -122,6 +142,12 @@
     oy = e.clientY - cr.top;
     sl = el.offsetLeft;
     st = el.offsetTop;
+    dragOrigins = App.selectedIds.length > 1
+      ? App.selectedIds.map(id => {
+          const d = document.querySelector(`.canvas-el[data-id="${id}"]`)
+          return d ? { id, left: d.offsetLeft, top: d.offsetTop } : null
+        }).filter(Boolean)
+      : []
     e.preventDefault();
   }
 
@@ -160,8 +186,20 @@
       }
       nx = Math.max(0, Math.min(nx, canvas.offsetWidth - tw));
       ny = Math.max(0, Math.min(ny, canvas.offsetHeight - th));
+      const dx = nx - sl
+      const dy = ny - st
       target.style.left = nx + 'px';
       target.style.top = ny + 'px';
+      if (dragOrigins.length) {
+        for (const o of dragOrigins) {
+          if (o.id === target.dataset.id) continue
+          const d = document.querySelector(`.canvas-el[data-id="${o.id}"]`)
+          if (d) {
+            d.style.left = (o.left + dx) + 'px'
+            d.style.top = (o.top + dy) + 'px'
+          }
+        }
+      }
     }
 
     if (resizing) {
@@ -191,23 +229,33 @@
 
   function onUp(e) {
     if (dragging || resizing) {
-      const id = target?.dataset?.id;
-      if (id && target) {
-        const x = parseInt(target.style.left) || 0;
-        const y = parseInt(target.style.top) || 0;
-        const w = parseInt(target.style.width) || 0;
-        const h = parseInt(target.style.height) || 0;
-        const el = selEl();
+      const allIds = dragging && dragOrigins.length
+        ? [target.dataset.id, ...dragOrigins.map(o => o.id)]
+        : [target?.dataset?.id]
+      const updates = []
+      for (const id of allIds) {
+        if (!id) continue
+        const d = document.querySelector(`.canvas-el[data-id="${id}"]`)
+        if (!d) continue
+        const x = parseInt(d.style.left) || 0
+        const y = parseInt(d.style.top) || 0
+        const w = parseInt(d.style.width) || 0
+        const h = parseInt(d.style.height) || 0
+        const el = slide()?.elements.find(e => e.id === id)
         if (el && (el.x !== x || el.y !== y || el.width !== w || el.height !== h)) {
-          save();
-          updEl(id, { x, y, width: w, height: h });
+          updates.push({ id, x, y, width: w, height: h })
         }
+      }
+      if (updates.length) {
+        save()
+        for (const u of updates) updEl(u.id, { x: u.x, y: u.y, width: u.width, height: u.height })
       }
     }
     dragging = false;
     resizing = false;
     target = null;
     handle = null;
+    dragOrigins = [];
     clearGuides();
   }
 
@@ -252,13 +300,15 @@
     e.preventDefault();
     e.stopPropagation();
     hideEditorCtx();
-    document.querySelectorAll('.canvas-el.selected').forEach(d => d.classList.remove('selected'));
-    el.classList.add('selected');
-    App.sel = el.dataset.id;
+    const id = el.dataset.id
+    if (!App.selectedIds?.includes(id)) {
+      App.selectedIds = [id]
+      App.sel = id
+    }
     const sel = selEl();
     if (sel) showPanel(sel);
     updateToolbar();
-    showEditorCtx(e, el.dataset.id);
+    showEditorCtx(e, id);
   }
 
   function onCtxClick(e) {

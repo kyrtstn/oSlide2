@@ -1,5 +1,5 @@
 const CoreState = {
-  slides: [], cur: 0, theme: 'default', sel: null, path: null,
+  slides: [], cur: 0, theme: 'default', sel: null, selectedIds: [], path: null,
   dirty: false, undo: [], redo: [], maxUndo: 50, _eid: 1, clipboard: null,
   projectId: null, projectName: null, projectTheme: null
 };

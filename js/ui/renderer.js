@@ -9,7 +9,8 @@ function renderSlide() {
   const frag = document.createDocumentFragment();
   s.elements.forEach((el, i) => {
     const d = document.createElement('div');
-    d.className = 'canvas-el' + ((el.type === 'text' || el.type === 'title') ? ' text-el' : '') + (el.id === App.sel ? ' selected' : '');
+    const isSel = el.id === App.sel || App.selectedIds?.includes(el.id)
+    d.className = 'canvas-el' + ((el.type === 'text' || el.type === 'title') ? ' text-el' : '') + (isSel ? ' selected' : '');
     d.dataset.id = el.id;
     let css = `left:${el.x}px;top:${el.y}px;width:${el.width}px;height:${el.height}px;z-index:${i}`;
     if (el.opacity !== undefined && el.opacity < 1) css += `;opacity:${el.opacity}`;

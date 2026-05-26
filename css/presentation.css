@@ -203,3 +203,35 @@ html, body {
   transition: opacity 0.5s ease;
   white-space: nowrap;
 }
+
+/* Annotation canvas */
+#pres-annot {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 60;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+#pres-annot:not(.active) {
+  pointer-events: none;
+}
+
+#annot-indicator {
+  position: fixed;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 12px;
+  border-radius: 10px;
+  pointer-events: none;
+  z-index: 110;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  white-space: nowrap;
+}#annot-indicator.show { opacity: 1; }

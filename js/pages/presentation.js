@@ -11,10 +11,132 @@
     ocean: { bg: '#eef6ff', text: '#002244', accent: '#ddcc00' }
   };
 
+  /* ========== ANNOTATION ========== */
+  let annotCanvas, annotCtx, annotActive = false, annotMode = 'pen', annotIdx = 0
+  let annotDrawing = false, laserRaf = null, laserX = 0, laserY = 0
+  const annotColors = ['#ffffff', '#ff4444', '#4488ff', '#44dd44', '#ffdd00']
+
+  function initAnnotation() {
+    annotCanvas = document.getElementById('pres-annot')
+    if (!annotCanvas) return
+    annotCtx = annotCanvas.getContext('2d')
+    annotCanvas.style.pointerEvents = 'none'
+    sizeCanvas()
+    window.addEventListener('resize', sizeCanvas)
+    annotCanvas.addEventListener('pointerdown', onAnnotDown)
+    annotCanvas.addEventListener('pointermove', onAnnotMove)
+    annotCanvas.addEventListener('pointerup', onAnnotUp)
+    annotCanvas.addEventListener('pointerleave', onAnnotUp)
+  }
+
+  function sizeCanvas() {
+    annotCanvas.width = window.innerWidth
+    annotCanvas.height = window.innerHeight
+  }
+
+  function setAnnotMode(mode) {
+    annotMode = mode
+    const names = { pen: 'Kalem', highlighter: 'Fosforlu', eraser: 'Silgi', laser: 'Lazer' }
+    const color = mode === 'highlighter' ? '' : ` ${annotColors[annotIdx]}`
+    showAnnotHint(`${names[mode] || 'Kalem'}${color}`)
+  }
+
+  function showAnnotHint(text) {
+    const el = document.getElementById('annot-indicator')
+    if (!el) return
+    el.textContent = text
+    el.classList.add('show')
+    clearTimeout(el._hide)
+    el._hide = setTimeout(() => el.classList.remove('show'), 2000)
+  }
+
+  function toggleAnnot() {
+    annotActive = !annotActive
+    annotCanvas.classList.toggle('active', annotActive)
+    if (annotActive) {
+      annotCanvas.style.pointerEvents = 'auto'
+      showAnnotHint(`Çizim aktif — ${annotMode}`)
+      document.body.style.cursor = 'crosshair'
+    } else {
+      annotCanvas.style.pointerEvents = 'none'
+      document.body.style.cursor = ''
+      if (laserRaf) { cancelAnimationFrame(laserRaf); laserRaf = null }
+    }
+  }
+
+  function clearAnnot() {
+    if (!annotCtx) return
+    annotCtx.clearRect(0, 0, annotCanvas.width, annotCanvas.height)
+    showAnnotHint('Temizlendi')
+  }
+
+  function onAnnotDown(e) {
+    if (!annotActive) return
+    if (annotMode === 'laser') return
+    annotDrawing = true
+    const r = annotCanvas.getBoundingClientRect()
+    const x = e.clientX - r.left, y = e.clientY - r.top
+    annotCtx.beginPath()
+    annotCtx.moveTo(x, y)
+    if (annotMode === 'eraser') {
+      annotCtx.clearRect(x - 15, y - 15, 30, 30)
+    }
+  }
+
+  function onAnnotMove(e) {
+    if (!annotActive) return
+    const r = annotCanvas.getBoundingClientRect()
+    const x = e.clientX - r.left, y = e.clientY - r.top
+    if (annotMode === 'laser') {
+      laserX = x; laserY = y
+      if (!laserRaf) laserRaf = requestAnimationFrame(drawLaser)
+      return
+    }
+    if (!annotDrawing) return
+    if (annotMode === 'pen') {
+      annotCtx.strokeStyle = annotColors[annotIdx]
+      annotCtx.lineWidth = 3
+      annotCtx.lineCap = 'round'
+      annotCtx.lineJoin = 'round'
+      annotCtx.lineTo(x, y)
+      annotCtx.stroke()
+    } else if (annotMode === 'highlighter') {
+      annotCtx.strokeStyle = 'rgba(255,255,0,0.25)'
+      annotCtx.lineWidth = 24
+      annotCtx.lineCap = 'round'
+      annotCtx.lineJoin = 'round'
+      annotCtx.lineTo(x, y)
+      annotCtx.stroke()
+    } else if (annotMode === 'eraser') {
+      annotCtx.clearRect(x - 15, y - 15, 30, 30)
+      annotCtx.beginPath()
+      annotCtx.moveTo(x, y)
+    }
+  }
+
+  function onAnnotUp() {
+    annotDrawing = false
+  }
+
+  function drawLaser() {
+    laserRaf = null
+    if (!annotActive || annotMode !== 'laser') return
+    annotCtx.clearRect(0, 0, annotCanvas.width, annotCanvas.height)
+    annotCtx.beginPath()
+    annotCtx.arc(laserX, laserY, 6, 0, Math.PI * 2)
+    annotCtx.fillStyle = '#ff3333'
+    annotCtx.fill()
+    annotCtx.beginPath()
+    annotCtx.arc(laserX, laserY, 2, 0, Math.PI * 2)
+    annotCtx.fillStyle = '#ffffff'
+    annotCtx.fill()
+    laserRaf = requestAnimationFrame(drawLaser)
+  }
+
   function init() {
+    initAnnotation()
     const w = document.getElementById('pres-wrapper');
     if (!w) return;
-
     if (window.electronAPI?.onPresentationData) { window.electronAPI.onPresentationData(d => load(d)); return; }
     const stored = localStorage.getItem('presentationData');
     if (stored) { try { load(JSON.parse(stored)); } catch { w.innerHTML = '<div style="color:#fff;text-align:center;padding:40px">' + _noData + '</div>'; } }
@@ -120,6 +242,7 @@
   function sf(v) { return `calc(${v} / 960 * 100vw)`; }
 
   function go(dir) {
+    if (annotActive && annotMode !== 'laser') clearAnnot()
     const views = document.querySelectorAll('.sv');
     if (!views.length) return;
     const prev = cur;
@@ -189,6 +312,20 @@
   function exit() { clearInterval(timer); window.close(); }
 
   document.addEventListener('keydown', e => {
+    if (annotActive) {
+      switch (e.key) {
+        case 'd': case 'D': toggleAnnot(); e.preventDefault(); return
+        case 'p': case 'P': setAnnotMode('pen'); e.preventDefault(); return
+        case 'h': case 'H': setAnnotMode('highlighter'); e.preventDefault(); return
+        case 'l': case 'L': if (annotMode !== 'laser') { annotCtx?.clearRect(0,0,annotCanvas.width,annotCanvas.height); setAnnotMode('laser') }; e.preventDefault(); return
+        case 'e': case 'E': setAnnotMode('eraser'); e.preventDefault(); return
+        case 'c': case 'C': annotIdx = (annotIdx + 1) % annotColors.length; setAnnotMode(annotMode); e.preventDefault(); return
+        case '/': clearAnnot(); e.preventDefault(); return
+        case 'Escape': toggleAnnot(); e.preventDefault(); return
+      }
+    } else {
+      if (e.key === 'd' || e.key === 'D') { toggleAnnot(); e.preventDefault(); return }
+    }
     switch (e.key) {
       case 'ArrowRight': case 'ArrowDown': case ' ': e.preventDefault(); go('next'); break;
       case 'ArrowLeft': case 'ArrowUp': e.preventDefault(); go('prev'); break;
@@ -198,7 +335,7 @@
     }
   });
   document.addEventListener('wheel', e => { e.deltaY > 0 ? go('next') : go('prev'); }, { passive: true });
-  document.addEventListener('click', e => { if (!e.target.closest('#pres-ui')) go('next'); });
+  document.addEventListener('click', e => { if (annotActive) return; if (!e.target.closest('#pres-ui')) go('next'); });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
