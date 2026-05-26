@@ -1,27 +1,55 @@
-# oSlide2
+<p align="center">
+  <img src="assets/icon.png" alt="oSlide2" width="128" />
+</p>
 
-A modern Electron-based slide/presentation application with a DOM-based editor, real-time preview, and fullscreen presentation mode.
+<h1 align="center">oSlide2</h1>
+
+<p align="center">
+  Electron-based slide/presentation app — zero frameworks, vanilla JS
+  <br/>
+  <a href="#features">Features</a> ·
+  <a href="#installation">Installation</a> ·
+  <a href="#build">Build</a> ·
+  <a href="#todo">TODO</a> ·
+  <a href="#license">License</a>
+</p>
+
+## Releases
+
+See [GitHub Releases](https://github.com/not0kkinex/oSlide2/releases) for downloads and changelog.
+
+### v0.1.0 (2026-05-26)
+
+- Portable single-file EXE (self-signed) — no install required
+- AI assistant, multi-select + alignment, animations, theme system
+- i18n (Turkish/English), snap guides, presentation annotations, favorites
 
 ## Features
 
-- **Project Management** — Create, open, rename, duplicate, and delete projects from the home screen
-- **DOM-Based Editor** — Edit slides and add elements: text, titles, images, rectangles, circles, arrows
-- **Properties Panel** — Adjust position, size, rotation, opacity, font family, and colors for selected elements
-- **Drag & Drop** — Move and resize elements on canvas; drag images from your file system
-- **Slide Management** — Add, duplicate, delete, and reorder slides via drag-and-drop thumbnails
-- **Undo / Redo** — Unlimited undo/redo stack
-- **Presentation Mode** — Fullscreen slideshow with fade/slide/zoom transitions and a live timer
-- **Export** — Export to PDF or PNG
+- **AI Assistant** — Generate slides, edit content, and execute commands via Pollinations.ai API
+- **Multi-Select** — Shift+click to select multiple elements; align (left/center/right/top/middle/bottom), distribute (horizontal/vertical), match width/height
+- **Animations** — Slide transitions (fade/slide/zoom), per-element entrance & emphasis effects, auto-stagger, "Apply to All"
+- **Theme System** — Project themes with customizable colors, fonts, animations; theme picker with visual cards
+- **Presentation Mode** — Fullscreen slideshow with pen and highlighter annotation tools
+- **Snap Guides** — Visual alignment lines while dragging elements
+- **Project Management** — Create, open, rename, duplicate, delete, favorite projects
+- **DOM-Based Editor** — Add text, titles, images, rectangles, circles, arrows; properties panel
+- **Slide Management** — Add, duplicate, delete, reorder via drag-and-drop thumbnails
+- **Undo / Redo** — Unlimited history stack
+- **Export / Import** — Export to PDF or PNG; import/export project files
 - **Keyboard Shortcuts** — Fully customizable via Settings > Shortcuts
-- **Theme** — Dark, Light, and System themes with a visual 3-card selector
-- **i18n** — Turkish and English language support (extensible)
-- **Context Menu** — Right-click menus for project cards and editor elements
+- **i18n** — Turkish & English localization (extensible)
+- **Themes** — Dark, Light, and System with 3-card selector
+- **Context Menu** — Right-click for project cards and editor elements
+- **Dev Console** — Toggle with F12 for debugging
+- **Auto-Save** — Periodic save to prevent data loss
 
 ## Built With
 
-- [Electron](https://www.electronjs.org/) — Desktop application framework
-- [Lucide](https://lucide.dev/) — Icon library
-- Vanilla JavaScript — No framework dependencies
+- [Electron](https://www.electronjs.org/) — Desktop framework
+- [Lucide](https://lucide.dev/) — Icons
+- [Inter](https://fonts.google.com/specimen/Inter) — UI font
+- Vanilla JavaScript — No frameworks
 
 ## Installation
 
@@ -32,11 +60,19 @@ npm start
 
 ## Usage
 
-1. On launch, the home screen is displayed
-2. Click "New Project" to create a presentation or open an existing one
-3. Use the toolbar in the editor to add elements to slides
-4. Press F5 to start presentation mode
-5. Press Ctrl+S to save your project
+1. Launch app — home screen appears
+2. Click "New Project" or open an existing one
+3. Use the toolbar to add and arrange elements
+4. Press F5 for presentation mode
+5. Press Ctrl+S to save
+
+## Build
+
+```bash
+npm run build
+```
+
+Output: `dist/oSlide2 0.1.0.exe` — Portable executable (self-signed, no install required)
 
 ## Project Structure
 
@@ -88,9 +124,23 @@ npm start
 | Ctrl+U | Underline |
 | Delete / Backspace | Delete selected |
 | F5 | Start presentation |
+| F12 | Toggle dev console |
 | Escape | Close dialog/menu |
 
 All shortcuts are customizable in Settings > Shortcuts.
+
+## TODO
+
+- [ ] Slide templates & layouts
+- [ ] Charts & data visualization
+- [ ] Cloud sync / backup
+- [ ] Collaborative editing
+- [ ] Mobile remote control
+- [ ] Plugin / extension system
+- [ ] Video export (MP4/WebM)
+- [ ] Custom themes marketplace
+- [ ] PDF import
+- [ ] Undo/redo for element position changes during drag
 
 ## License
 
