@@ -798,6 +798,16 @@ function init() {
         case 'align-right': { const e = selEl(); if (e) updEl(e.id, { textAlign: 'right' }); updateToolbar(); break; }
         case 'bring-forward': fwd(); break;
         case 'send-backward': bwd(); break;
+        case 'align-element-left': alignEls('left'); break;
+        case 'align-element-center-h': alignEls('centerX'); break;
+        case 'align-element-right': alignEls('right'); break;
+        case 'align-element-top': alignEls('top'); break;
+        case 'align-element-middle': alignEls('centerY'); break;
+        case 'align-element-bottom': alignEls('bottom'); break;
+        case 'distribute-horizontal': distributeEls('horizontal'); break;
+        case 'distribute-vertical': distributeEls('vertical'); break;
+        case 'match-width': matchEls('width'); break;
+        case 'match-height': matchEls('height'); break;
         case 'start-presentation': startPresentation(); break;
       }
     });

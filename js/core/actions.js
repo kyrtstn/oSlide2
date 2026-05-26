@@ -174,6 +174,76 @@ function toggleStrikethrough() {
   if (e && e.type === 'text') { updEl(e.id, { strikethrough: !e.strikethrough }); updateToolbar(); }
 }
 
+function getSelected() {
+  const ids = App.selectedIds?.length ? App.selectedIds : (App.sel ? [App.sel] : [])
+  const s = slide()
+  if (!s) return []
+  return ids.map(id => s.elements.find(e => e.id === id)).filter(Boolean)
+}
+
+function alignEls(edge) {
+  const els = getSelected()
+  if (els.length < 2) return
+  save()
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  for (const e of els) {
+    if (e.x < minX) minX = e.x
+    if (e.x + e.width > maxX) maxX = e.x + e.width
+    if (e.y < minY) minY = e.y
+    if (e.y + e.height > maxY) maxY = e.y + e.height
+  }
+  const midX = minX + (maxX - minX) / 2
+  const midY = minY + (maxY - minY) / 2
+  for (const e of els) {
+    const props = {}
+    if (edge === 'left') props.x = minX
+    else if (edge === 'centerX') props.x = midX - e.width / 2
+    else if (edge === 'right') props.x = maxX - e.width
+    else if (edge === 'top') props.y = minY
+    else if (edge === 'centerY') props.y = midY - e.height / 2
+    else if (edge === 'bottom') props.y = maxY - e.height
+    Object.assign(e, props)
+  }
+  renderSlide()
+  renderThumbs()
+}
+
+function distributeEls(axis) {
+  const els = getSelected()
+  if (els.length < 3) return
+  save()
+  const sorted = [...els].sort((a, b) => axis === 'horizontal' ? a.x - b.x : a.y - b.y)
+  if (axis === 'horizontal') {
+    const totalW = sorted.reduce((s, e) => s + e.width, 0)
+    const first = sorted[0], last = sorted[sorted.length - 1]
+    const space = (last.x + last.width - first.x - totalW) / (sorted.length - 1)
+    let cx = first.x
+    for (const e of sorted) { e.x = cx; cx += e.width + space }
+  } else {
+    const totalH = sorted.reduce((s, e) => s + e.height, 0)
+    const first = sorted[0], last = sorted[sorted.length - 1]
+    const space = (last.y + last.height - first.y - totalH) / (sorted.length - 1)
+    let cy = first.y
+    for (const e of sorted) { e.y = cy; cy += e.height + space }
+  }
+  renderSlide()
+  renderThumbs()
+}
+
+function matchEls(prop) {
+  const els = getSelected()
+  if (els.length < 2) return
+  save()
+  const maxW = Math.max(...els.map(e => e.width))
+  const maxH = Math.max(...els.map(e => e.height))
+  for (const e of els) {
+    if (prop === 'width' || prop === 'both') e.width = maxW
+    if (prop === 'height' || prop === 'both') e.height = maxH
+  }
+  renderSlide()
+  renderThumbs()
+}
+
 window.addSlide = addSlide;
 window.delSlide = delSlide;
 window.dupSlide = dupSlide;
@@ -190,3 +260,6 @@ window.toggleBold = toggleBold;
 window.toggleItalic = toggleItalic;
 window.toggleUnderline = toggleUnderline;
 window.toggleStrikethrough = toggleStrikethrough;
+window.alignEls = alignEls;
+window.distributeEls = distributeEls;
+window.matchEls = matchEls;
