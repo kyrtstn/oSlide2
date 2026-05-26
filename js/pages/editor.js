@@ -9,7 +9,7 @@ function startAutoSave() {
       const cfg = await window.electronAPI.getConfig()
       if (cfg.settings?.autoSave !== false) {
         const interval = (cfg.settings?.autoSaveInterval || 60) * 1000
-        autoSaveTimer = setInterval(() => { if (App.dirty) saveProject() }, interval)
+        autoSaveTimer = setInterval(() => { if (App.dirty && App.path) saveProject() }, interval)
       }
     }
   })()
@@ -210,8 +210,8 @@ function loadProjectData(d) {
   if (d._projectId) App.projectId = d._projectId;
   if (d._projectName) App.projectName = d._projectName;
   if (d._projectTheme) App.projectTheme = d._projectTheme;
-  if (d._projectPath) App.path = d._projectPath;
   loadData(d);
+  if (d._projectPath) App.path = d._projectPath;
   const name = d._projectName || I18n.t('editor.untitled');
   document.title = `oSlide2 - ${name}`;
   startAutoSave();
