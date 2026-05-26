@@ -49,7 +49,7 @@
           css += `;--anim-delay:${(baseDelay + ei * 0.08).toFixed(2)}s`
         }
         d.style.cssText = css;
-        if (el.type === 'text') {
+        if (el.type === 'text' || el.type === 'title') {
           d.textContent = el.content || '';
           d.style.fontSize = sf(el.fontSize || 16);
           d.style.fontFamily = el.fontFamily || 'Arial';

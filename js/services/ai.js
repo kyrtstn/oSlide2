@@ -33,15 +33,15 @@ const AI = {
   },
 
   async chat(messages) {
-    const system = { role: 'system', content: 'Sen bir sunum asistanısın. Kullanıcının sunum hazırlamasına yardımcı ol. Kısa ve net cevaplar ver.' }
+    const system = { role: 'system', content: 'Sen bir sunum hazırlama asistanısın. Kullanıcıya slayt sunumları için yardım edersin. Kısa, net ve doğrudan cevaplar ver. Slayt başlıkları ve madde işaretleri önerirsen kullanıcı "slayt oluştur" diyerek bunları slayta çevirebilir.' }
     return await this._call([system, ...messages])
   },
 
   async generateSlides(topic, count = 3, context = '') {
-    const ctx = context ? `\n\nMevcut sunum:\n${context}` : ''
-    const prompt = `"${topic}" konusu hakkında tam ${count} adet slayt oluştur. Her slayt: title (başlık), bullets (madde dizisi, en az 3 madde). Sadece geçerli JSON döndür, başka hiçbir şey yazma. Format: [{"title":"...","bullets":["...","...","..."]}]${ctx}`
+    const ctx = context ? `\n\nMevcut sunum bağlamı:\n${context}` : ''
+    const prompt = `"${topic}" konusu hakkında ${count} adet slayt oluştur. Her slayt: title (kısa başlık), bullets (en az 3 madde içeren dizi). Sadece geçerli JSON döndür, kod blokları veya açıklama kullanma. Format: [{"title":"...","bullets":["...","...","..."]}]${ctx}`
     const text = await this._call([
-      { role: 'system', content: 'JSON dizisi döndüren bir slayt üreticisin.' },
+      { role: 'system', content: 'Sen yalnızca JSON döndüren bir slayt üreticisisin. Verilen konu hakkında slaytlar oluşturur, her slaydın başlığı ve madde işaretleri olur.' },
       { role: 'user', content: prompt },
     ], { temperature: 0.5 })
     const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()

@@ -363,27 +363,6 @@ function initAI() {
   const msgsEl = document.getElementById('ai-messages')
   const typing = document.getElementById('ai-typing')
 
-  function saveHistory() {
-    try { localStorage.setItem('oslide2_ai_msgs', JSON.stringify(aiMsgs)) } catch {}
-  }
-
-  function loadHistory() {
-    try {
-      const saved = localStorage.getItem('oslide2_ai_msgs')
-      if (saved) {
-        aiMsgs = JSON.parse(saved)
-        aiMsgs.forEach(m => {
-          const div = document.createElement('div')
-          div.className = `ai-msg ${m.role}`
-          div.textContent = m.content
-          msgsEl.appendChild(div)
-        })
-        msgsEl.scrollTop = msgsEl.scrollHeight
-        hideWelcome()
-      }
-    } catch {}
-  }
-
   function buildSlideContext() {
     return App.slides.map((s, i) => {
       const lines = s.elements.map(el => {
@@ -403,7 +382,6 @@ function initAI() {
     msgsEl.scrollTop = msgsEl.scrollHeight
     const welcome = msgsEl.querySelector('.ai-welcome')
     if (welcome) welcome.style.display = 'none'
-    saveHistory()
   }
 
   function hideWelcome() {
@@ -445,7 +423,7 @@ function initAI() {
   function isSlideRequest(text) {
     const tr = /slayt\s*(oluştur|yap|hazırla|üret|ekle)/i
     const en = /slide\s*(create|make|generate|add)/i
-    const sunum = /sunum\s*(hazırla|yap)/i
+    const sunum = /sunum\s*(hazırla|yap|oluştur)/i
     return tr.test(text) || en.test(text) || sunum.test(text)
   }
 
@@ -462,7 +440,7 @@ function initAI() {
       .replace(/\d+\s*(slayt|slide|tane|adet)\s*/gi, '')
       .replace(/slayt\s*(oluştur|yap|hazırla|üret|ekle)\s*/gi, '')
       .replace(/slide\s*(create|make|generate|add)\s*/gi, '')
-      .replace(/sunum\s*(hazırla|yap)\s*/gi, '')
+      .replace(/sunum\s*(hazırla|yap|oluştur)\s*/gi, '')
       .replace(/(bana|lütfen|yapabilir\s*misin)\s*/gi, '')
       .trim()
   }
@@ -500,18 +478,117 @@ function initAI() {
     try {
       const ctx = buildSlideContext()
       const msgs = aiMsgs.slice(-8).map(m => ({ role: m.role, content: m.content }))
-      if (ctx) msgs.unshift({ role: 'system', content: `Şu anki sunum:\n${ctx}` })
+      const actionHint = 'Kullanıcı slaytta değişiklik istiyorsa JSON döndür. JSON içinde "explain" alanına ne yaptığını açıkla. Desteklenen aksiyonlar: {"action":"add_title","content":"...","explain":"...","fontSize":42}  {"action":"add_text","content":"...","explain":"..."}  {"action":"set_animations","animType":"fade","animDuration":0.5,"target":"selected","explain":"..."}  {"action":"set_text_color","color":"#ff0000","target":"selected","explain":"..."}  {"action":"set_background","color":"#1a1a2e","explain":"..."}  Normal sorulara normal yanıt ver.'
+      msgs.unshift({ role: 'system', content: ctx ? `Şu anki sunum:\n${ctx}\n\n${actionHint}` : actionHint })
       replaceMsg(status, 'brain', 'Analiz ediliyor...')
       const r = await AI.chat(msgs)
       status.remove()
-      const el = document.createElement('div')
-      await typewrite(el, r)
+
+      let action = null
+      const jsonMatch = r.match(/\{(?:[^{}]|"(?:\\.|[^"\\])*")*\}/)
+      const jsonStr = jsonMatch ? jsonMatch[0] : r.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
+      try { action = JSON.parse(jsonStr) } catch {}
+
+      if (action?.action) {
+        const desc = await execAction(action)
+        addMsg('assistant', action.explain || desc)
+      } else {
+        const el = document.createElement('div')
+        await typewrite(el, r)
+        aiMsgs.push({ role: 'assistant', content: r })
+      }
     } catch (e) {
       replaceMsg(status, 'alert-triangle', I18n.t('ai.error') + ': ' + e.message)
       status.className = 'ai-msg err'
+      aiMsgs.push({ role: 'assistant', content: '⚠️ ' + I18n.t('ai.error') + ': ' + e.message })
     }
     aiBusy = false
     typing.classList.add('hidden')
+  }
+
+  async function execAction(action) {
+    const s = slide()
+    if (!s) return ''
+    save()
+    const th = App.projectTheme
+    let desc = ''
+
+    switch (action.action) {
+      case 'add_title': {
+        s.elements.push({
+          id: id(), type: 'title',
+          content: action.content || 'Başlık',
+          x: action.x || 60, y: action.y || 40,
+          width: action.width || 840, height: action.height || 65,
+          fontSize: action.fontSize || 42,
+          fontFamily: th?.titleFont || 'Arial',
+          color: th?.titleColor || '#222',
+          bold: true, textAlign: 'center',
+          animType: th?.animType || 'fade',
+          animDuration: th?.animDuration || 0.5,
+        })
+        App.sel = s.elements[s.elements.length - 1].id
+        desc = `"${action.content || 'Başlık'}" başlığı eklendi`
+        break
+      }
+      case 'add_text': {
+        s.elements.push({
+          id: id(), type: 'text',
+          content: action.content || '',
+          x: action.x || 120, y: action.y || 80,
+          width: action.width || 200, height: action.height || 60,
+          fontSize: action.fontSize || 20,
+          fontFamily: th?.textFont || 'Arial',
+          color: th?.textColor || '#333',
+          bold: false, textAlign: 'left',
+          animType: th?.animType || 'fade',
+          animDuration: th?.animDuration || 0.5,
+        })
+        App.sel = s.elements[s.elements.length - 1].id
+        desc = `"${action.content || ''}" metni eklendi`
+        break
+      }
+      case 'set_animations': {
+        const anim = action.animType || 'fade'
+        const dur = action.animDuration ?? 0.5
+        let count = 0
+        if (action.target === 'selected' && App.sel) {
+          const el = s.elements.find(e => e.id === App.sel)
+          if (el) { el.animType = anim; el.animDuration = dur; count = 1 }
+        } else {
+          for (const sl of App.slides) {
+            sl.elements.forEach(e => { e.animType = anim; e.animDuration = dur })
+            count += sl.elements.length
+          }
+        }
+        desc = `${count} elemana ${anim} animasyonu (${dur}s) atandı`
+        break
+      }
+      case 'set_text_color': {
+        const color = action.color || '#333'
+        if (action.target === 'selected' && App.sel) {
+          const el = s.elements.find(e => e.id === App.sel)
+          if (el && (el.type === 'text' || el.type === 'title')) { el.color = color; desc = `Seçili elemanın rengi ${color} olarak değiştirildi` }
+          else desc = 'Seçili eleman bulunamadı'
+        } else {
+          let cnt = 0
+          for (const sl of App.slides)
+            sl.elements.forEach(el => { if (el.type === 'text' || el.type === 'title') { el.color = color; cnt++ } })
+          desc = `${cnt} metin elemanının rengi ${color} olarak değiştirildi`
+        }
+        break
+      }
+      case 'set_background': {
+        for (const slide of App.slides) slide.background = action.color || '#fff'
+        desc = `Tüm slaytların arkaplanı ${action.color || '#fff'} olarak değiştirildi`
+        break
+      }
+    }
+    renderSlide()
+    renderThumbs()
+    updateToolbar()
+    hidePanel()
+    return desc || 'İşlem tamamlandı'
   }
 
   async function genSlides(topic, count) {
@@ -579,8 +656,16 @@ function initAI() {
           const bullets = Array.isArray(s.bullets) ? s.bullets : []
           const layout = layouts[idx % layouts.length]
           layout(els, s.title || '', bullets)
+          if (th) {
+            els.forEach(el => {
+              el.animType = th.animType || 'fade'
+              el.animDuration = th.animDuration || 0.5
+            })
+          }
           App.slides.push({ id: id(), background: bg, elements: els })
         })
+        App.cur = App.slides.length - slides.length
+        App.sel = null
         renderAll()
         renderThumbs()
         const ok = agentMsg('check-circle', `${slides.length} slayt oluşturuldu`)
@@ -635,8 +720,6 @@ function initAI() {
     aiBusy = false
     typing.classList.add('hidden')
   }
-
-  loadHistory()
 
   sendBtn?.addEventListener('click', send)
   input?.addEventListener('keydown', e => {
@@ -734,7 +817,7 @@ function init() {
   });
   document.getElementById('text-bg-color')?.addEventListener('input', function() {
     const e = selEl();
-    if (e && e.type === 'text') updEl(e.id, { bgColor: this.value });
+    if (e && (e.type === 'text' || e.type === 'title')) updEl(e.id, { bgColor: this.value });
   });
   document.getElementById('slide-bg-color')?.addEventListener('input', function() {
     const s = slide();

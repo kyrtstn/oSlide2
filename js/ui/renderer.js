@@ -5,12 +5,11 @@ function renderSlide() {
   c.style.background = s.background || '#fff';
   document.getElementById('canvas').style.background = s.background || '#fff';
   if (document.activeElement?.closest?.('.canvas-el.text-el[contenteditable]')) return;
-  if (document.activeElement?.closest?.('#panel-body')) return;
   c.innerHTML = '';
   const frag = document.createDocumentFragment();
   s.elements.forEach((el, i) => {
     const d = document.createElement('div');
-    d.className = 'canvas-el' + (el.type === 'text' ? ' text-el' : '') + (el.id === App.sel ? ' selected' : '');
+    d.className = 'canvas-el' + ((el.type === 'text' || el.type === 'title') ? ' text-el' : '') + (el.id === App.sel ? ' selected' : '');
     d.dataset.id = el.id;
     let css = `left:${el.x}px;top:${el.y}px;width:${el.width}px;height:${el.height}px;z-index:${i}`;
     if (el.opacity !== undefined && el.opacity < 1) css += `;opacity:${el.opacity}`;
@@ -25,6 +24,7 @@ function renderSlide() {
 
 function renderEl(d, el) {
   switch (el.type) {
+    case 'title':
     case 'text':
       d.contentEditable = true;
       d.textContent = el.content || '';
@@ -131,7 +131,7 @@ function renderThumbs() {
     s.elements.forEach(el => {
       const x = document.createElement('div');
       x.style.cssText = `position:absolute;left:${el.x * 0.2}px;top:${el.y * 0.2}px;width:${el.width * 0.2}px;height:${el.height * 0.2}px`;
-      if (el.type === 'text') {
+      if (el.type === 'text' || el.type === 'title') {
         x.textContent = el.content || '';
         x.style.fontSize = ((el.fontSize || 16) * 0.2) + 'px';
         x.style.color = el.color || '#333';

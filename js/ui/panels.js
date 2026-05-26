@@ -34,7 +34,7 @@ function showPanel(el) {
   f(I18n.t('panel.opacity'), 'opacity', 'n', { min: 0, step: 0.1 });
   html += '</div>';
 
-  if (el.type === 'text') {
+  if (el.type === 'text' || el.type === 'title') {
     f(I18n.t('panel.content'), 'content', 't');
     f(I18n.t('panel.background'), 'bgColor', 'c');
     f(I18n.t('panel.fontFamily'), 'fontFamily', 's', {
