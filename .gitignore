@@ -7,3 +7,6 @@ dist-installer/
 .DS_Store
 assets/cert.pfx
 build.bat
+
+# SlideLab project files
+*.slidelab
