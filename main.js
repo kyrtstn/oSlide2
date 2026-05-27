@@ -8,12 +8,37 @@ let presentationWindow;
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'oslide2_config.json');
 
+function validateThemeColor(color) {
+  return /^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#ffffff'
+}
+
+function validateConfig(cfg) {
+  if (!cfg) return getDefaultConfig()
+  if (!cfg.settings) cfg.settings = getDefaultConfig().settings
+  if (!cfg.projectThemes) cfg.projectThemes = getDefaultThemes()
+  const s = cfg.settings
+  if (!['dark', 'light', 'system'].includes(s.theme)) s.theme = 'dark'
+  if (!['tr', 'en'].includes(s.language)) s.language = 'tr'
+  if (typeof s.autoSave !== 'boolean') s.autoSave = true
+  if (typeof s.autoSaveInterval !== 'number' || s.autoSaveInterval < 10 || s.autoSaveInterval > 600) s.autoSaveInterval = 60
+  if (typeof s.recentCount !== 'number' || s.recentCount < 1 || s.recentCount > 50) s.recentCount = 10
+  if (typeof s.gridSize !== 'number' || s.gridSize < 5 || s.gridSize > 100) s.gridSize = 20
+  if (typeof s.defaultFontSize !== 'number' || s.defaultFontSize < 8 || s.defaultFontSize > 72) s.defaultFontSize = 16
+  if (cfg.projectThemes) {
+    cfg.projectThemes.forEach(t => {
+      t.canvasBg = validateThemeColor(t.canvasBg)
+      t.titleColor = validateThemeColor(t.titleColor)
+      t.textColor = validateThemeColor(t.textColor)
+    })
+  }
+  return cfg
+}
+
 function loadConfig() {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
       const cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'))
-      if (!cfg.projectThemes) cfg.projectThemes = getDefaultThemes()
-      return cfg
+      return validateConfig(cfg)
     }
   } catch (err) { console.error('loadConfig error:', err); }
   return getDefaultConfig()
@@ -316,8 +341,15 @@ ipcMain.handle('delete-file', async (event, filePath) => {
 
 ipcMain.handle('save-project-themes', (event, themes) => {
   const config = loadConfig()
-  config.projectThemes = themes
-  saveConfig(config)
+  if (Array.isArray(themes)) {
+    themes.forEach(t => {
+      t.canvasBg = validateThemeColor(t.canvasBg)
+      t.titleColor = validateThemeColor(t.titleColor)
+      t.textColor = validateThemeColor(t.textColor)
+    })
+    config.projectThemes = themes
+    saveConfig(config)
+  }
   return true
 })
 
@@ -333,6 +365,12 @@ ipcMain.handle('update-project-meta', async (event, { projectId, slideCount, pat
     return true;
   }
   return false;
+});
+
+ipcMain.handle('read-image', async (event, filePath) => {
+  try {
+    return await readImageFile(filePath);
+  } catch (err) { console.error('read-image error:', err); return null; }
 });
 
 ipcMain.handle('open-image-dialog', async () => {

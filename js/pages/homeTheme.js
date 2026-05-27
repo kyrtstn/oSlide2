@@ -3,6 +3,10 @@
   let editingThemeId = null
   window.editingThemeId = null
 
+  function _sanitizeColor(c) {
+    return /^#[0-9A-Fa-f]{6}$/.test(c) ? c : '#ffffff'
+  }
+
   function setThemePreview(th) {
     const title = document.getElementById('th-preview-title')
     const text = document.getElementById('th-preview-text')
@@ -33,7 +37,7 @@
       const preview = document.createElement('div')
       preview.className = 'theme-card2-preview'
       preview.style.background = th.canvasBg || '#ffffff'
-      preview.innerHTML = `<div class="th-preview-title" style="color:${th.titleColor||'#222'};font-family:${th.titleFont||'Arial'}">Aa</div><div class="th-preview-text" style="color:${th.textColor||'#333'};font-family:${th.textFont||'Arial'}">${esc(th.name)}</div>`
+      preview.innerHTML = `<div class="th-preview-title" style="color:${_sanitizeColor(th.titleColor || '#222')};font-family:${esc(th.titleFont)||'Arial'}">Aa</div><div class="th-preview-text" style="color:${_sanitizeColor(th.textColor || '#333')};font-family:${esc(th.textFont)||'Arial'}">${esc(th.name)}</div>`
 
       const body = document.createElement('div')
       body.className = 'theme-card2-body'
