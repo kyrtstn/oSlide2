@@ -11,7 +11,6 @@
   <a href="#installation">Installation</a> ·
   <a href="#build">Build</a> ·
   <a href="#todo">TODO</a> ·
-  <a href="#license">License</a>
 </p>
 
 ## Releases
