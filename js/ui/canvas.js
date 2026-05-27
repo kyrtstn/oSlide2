@@ -99,6 +99,15 @@
     if (!canvas) return;
     canvas.style.transform = `scale(${canvasScale})`;
     canvas.style.transformOrigin = 'top center';
+    let spacer = document.getElementById('canvas-zoom-spacer');
+    if (!spacer) {
+      spacer = document.createElement('div');
+      spacer.id = 'canvas-zoom-spacer';
+      spacer.style.cssText = 'pointer-events:none;visibility:hidden';
+      canvas.parentElement?.appendChild(spacer);
+    }
+    spacer.style.width = (960 * canvasScale) + 'px';
+    spacer.style.height = (540 * canvasScale) + 'px';
     const v = document.getElementById('zoom-value');
     if (v) v.textContent = '%' + Math.round(canvasScale * 100);
   }
@@ -215,8 +224,9 @@
     const cr = canvas.getBoundingClientRect();
 
     if (dragging) {
-      let nx = e.clientX - cr.left - ox;
-      let ny = e.clientY - cr.top - oy;
+      const sc = canvasScale
+      let nx = (e.clientX - cr.left - ox) / sc;
+      let ny = (e.clientY - cr.top - oy) / sc;
       const tw = target.offsetWidth, th = target.offsetHeight
       if (snapEnabled) {
         const snap = computeSnap(nx, ny, tw, th, canvas.offsetWidth, canvas.offsetHeight, target.dataset.id)
@@ -244,8 +254,9 @@
     }
 
     if (resizing) {
-      const dx = e.clientX - sx;
-      const dy = e.clientY - sy;
+      const sc = canvasScale
+      const dx = (e.clientX - sx) / sc;
+      const dy = (e.clientY - sy) / sc;
       let nw = sw, nh = sh, nl = sl, nt = st;
       const cls = handle.className.split(' ')[1];
       if (cls.includes('e')) nw = Math.max(10, sw + dx);
@@ -438,7 +449,7 @@
       canvasScale = Math.max(ZOOM_MIN, parseFloat((canvasScale - ZOOM_STEP).toFixed(2)));
       applyZoom();
     });
-    document.getElementById('zoom-value')?.addEventListener('click', () => {
+    document.getElementById('zoom-value')?.addEventListener('dblclick', () => {
       canvasScale = 1;
       applyZoom();
     });

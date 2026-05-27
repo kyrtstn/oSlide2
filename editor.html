@@ -81,40 +81,69 @@
     </header>
 
     <div id="workspace">
-      <aside id="sidebar">
-        <div class="sidebar-head">
-          <span data-i18n="editor.slides">Slaytlar</span>
-          <div class="sidebar-actions">
+      <div id="workspace-body">
+        <aside id="sidebar">
+          <div class="sidebar-head">
+            <span data-i18n="editor.slides">Slaytlar</span>
+            <div class="sidebar-actions">
             <button id="add-slide-btn" data-i18n-attr="title:editor.newSlide"><i data-lucide="plus"></i></button>
+            <button id="template-btn" title="Şablondan Ekle"><i data-lucide="layout-template"></i></button>
             <button id="dup-slide-btn" data-i18n-attr="title:editor.dupSlide"><i data-lucide="copy"></i></button>
+            <button id="save-as-template-btn" title="Şablon Olarak Kaydet" style="margin-left:auto"><i data-lucide="save"></i></button>
+            </div>
           </div>
-        </div>
-        <div id="slide-list"></div>
-      </aside>
+          <div id="slide-list"></div>
+        </aside>
 
-      <main id="canvas-area">
-        <div id="canvas-ruler">
-          <span>0</span><span>100</span><span>200</span><span>300</span><span>400</span>
-          <span>500</span><span>600</span><span>700</span><span>800</span><span>900</span>
-        </div>
-        <div id="canvas">
-          <div id="slide-container"></div>
-          <div id="grid-overlay"></div>
-        </div>
-        <div class="zoom-bar">
-          <button class="zb-btn" id="zoom-out">−</button>
-          <span class="zb-value" id="zoom-value">%100</span>
-          <button class="zb-btn" id="zoom-in">+</button>
-        </div>
-        <button class="ai-fab" id="ai-fab-btn" title="AI Asistanı" onclick="document.getElementById('ai-toggle-btn').click()">
-          <i data-lucide="bot"></i>
-        </button>
-      </main>
+        <main id="canvas-area">
+          <div id="canvas-ruler">
+            <span>0</span><span>100</span><span>200</span><span>300</span><span>400</span>
+            <span>500</span><span>600</span><span>700</span><span>800</span><span>900</span>
+          </div>
+          <div id="canvas">
+            <div id="slide-container"></div>
+            <div id="grid-overlay"></div>
+          </div>
+          <div class="zoom-bar">
+            <button class="zb-btn" id="zoom-out">−</button>
+            <span class="zb-value" id="zoom-value">%100</span>
+            <button class="zb-btn" id="zoom-in">+</button>
+          </div>
+          <button class="ai-fab" id="ai-fab-btn" title="AI Asistanı" onclick="document.getElementById('ai-toggle-btn').click()">
+            <i data-lucide="bot"></i>
+          </button>
+        </main>
+
+        <aside id="panel" class="panel-hidden">
+          <div class="panel-head">
+            <span id="panel-title" data-i18n="editor.properties">Özellikler</span>
+            <button id="panel-close"><i data-lucide="x"></i></button>
+          </div>
+          <div class="panel-tabs">
+            <button class="panel-tab active" data-tab="element">Öğe</button>
+            <button class="panel-tab" data-tab="slide">Slayt</button>
+            <button class="panel-tab" data-tab="animation">Animasyon</button>
+          </div>
+          <div id="panel-body">
+            <div class="pp-group">
+              <label class="pp-label" data-i18n="editor.background">Arkaplan</label>
+              <input type="color" id="slide-bg-color" value="#ffffff" class="pp-input pp-input-color">
+              <select id="theme-select" class="pp-input" style="margin-top:6px">
+                <option value="default" data-i18n="theme.default">Varsayılan</option>
+                <option value="dark" data-i18n="theme.dark">Karanlık</option>
+                <option value="nature" data-i18n="theme.nature">Doğa</option>
+                <option value="ocean" data-i18n="theme.ocean">Okyanus</option>
+              </select>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <div id="notes-bar">
         <div id="notes-bar-head">
           <i data-lucide="file-text"></i>
           <span>Konuşmacı Notları</span>
+          <span id="notes-status"></span>
           <button id="notes-toggle" title="Gizle/Göster">
             <i data-lucide="chevron-down"></i>
           </button>
@@ -123,30 +152,6 @@
           placeholder="Bu slayt için notlarınızı buraya yazın..."
           rows="3"></textarea>
       </div>
-
-      <aside id="panel" class="panel-hidden">
-        <div class="panel-head">
-          <span id="panel-title" data-i18n="editor.properties">Özellikler</span>
-          <button id="panel-close"><i data-lucide="x"></i></button>
-        </div>
-        <div class="panel-tabs">
-          <button class="panel-tab active" data-tab="element">Öğe</button>
-          <button class="panel-tab" data-tab="slide">Slayt</button>
-          <button class="panel-tab" data-tab="animation">Animasyon</button>
-        </div>
-        <div id="panel-body">
-          <div class="pp-group">
-            <label class="pp-label" data-i18n="editor.background">Arkaplan</label>
-            <input type="color" id="slide-bg-color" value="#ffffff" class="pp-input pp-input-color">
-            <select id="theme-select" class="pp-input" style="margin-top:6px">
-              <option value="default" data-i18n="theme.default">Varsayılan</option>
-              <option value="dark" data-i18n="theme.dark">Karanlık</option>
-              <option value="nature" data-i18n="theme.nature">Doğa</option>
-              <option value="ocean" data-i18n="theme.ocean">Okyanus</option>
-            </select>
-          </div>
-        </div>
-      </aside>
     </div>
 
     <div id="status-bar">
@@ -388,6 +393,41 @@
     </div>
   </div>
 
+  <div id="save-template-overlay" class="hidden">
+    <div id="save-template-modal">
+      <div id="save-template-head">
+        <span>Şablon Olarak Kaydet</span>
+        <button id="save-template-close"><i data-lucide="x"></i></button>
+      </div>
+      <div id="save-template-body">
+        <div class="form-group">
+          <label>Şablon Adı</label>
+          <input type="text" id="st-name" placeholder="Örn: Haftalık Rapor" />
+        </div>
+        <div class="form-group">
+          <label>Açıklama</label>
+          <input type="text" id="st-desc" placeholder="Kısa açıklama" />
+        </div>
+        <div class="form-group">
+          <label>Kategori</label>
+          <select id="st-category">
+            <option value="temel">Temel</option>
+            <option value="düzen">Düzen</option>
+            <option value="içerik">İçerik</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Etiketler (virgülle ayır)</label>
+          <input type="text" id="st-tags" placeholder="ör: rapor, haftalık, iş" />
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button id="save-template-cancel" class="btn-secondary">İptal</button>
+        <button id="save-template-confirm" class="btn-primary">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
   <div id="editor-ctx-menu" class="ctx-menu hidden">
     <div class="ctx-item" data-action="copy"><i data-lucide="copy"></i> <span data-i18n="context.copy">Kopyala</span></div>
     <div class="ctx-item" data-action="paste"><i data-lucide="clipboard-paste"></i> <span data-i18n="context.paste">Yapıştır</span></div>
@@ -424,6 +464,7 @@
   <script src="js/services/theme.js"></script>
   <script src="js/services/shortcuts.js"></script>
   <script src="js/services/i18n.js"></script>
+  <script src="js/data/templates.js"></script>
   <script src="js/services/projectManager.js"></script>
   <script src="js/services/ai.js"></script>
   <script src="js/core/state.js"></script>

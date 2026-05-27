@@ -25,6 +25,11 @@
         <a class="nav-item" data-section="favorites"><i data-lucide="star"></i> <span data-i18n="home.favorites">Favoriler</span></a>
       </nav>
       <div class="sidebar-divider"></div>
+      <div class="sidebar-section-label">ŞABLONLAR</div>
+      <nav class="sidebar-nav">
+        <a class="nav-item" data-section="templates"><i data-lucide="layout-template"></i> <span>Şablon Galerisi</span></a>
+      </nav>
+      <div class="sidebar-divider"></div>
       <div class="sidebar-section-label" data-i18n="home.themes">TEMALAR</div>
       <nav class="sidebar-nav">
         <a class="nav-item" data-section="themes"><i data-lucide="palette"></i> <span data-i18n="home.themeGallery">Tema Galerisi</span></a>
@@ -63,6 +68,25 @@
         <div id="themes-section" class="hidden">
           <div id="themes-grid"></div>
         </div>
+
+        <section id="section-templates" class="home-section hidden">
+          <div class="section-head">
+            <h2>Şablon Galerisi</h2>
+            <p class="section-desc">
+              Bir şablon seç, proje olarak açılır — istediğin gibi düzenle.
+            </p>
+          </div>
+
+          <div class="template-filter">
+            <button class="tf-btn active" data-cat="all">Tümü</button>
+            <button class="tf-btn" data-cat="temel">Temel</button>
+            <button class="tf-btn" data-cat="düzen">Düzen</button>
+            <button class="tf-btn" data-cat="içerik">İçerik</button>
+          </div>
+
+          <div id="template-gallery" class="template-gallery-grid">
+          </div>
+        </section>
       </div>
     </div>
 
@@ -413,6 +437,7 @@
   <script src="js/services/theme.js"></script>
   <script src="js/services/i18n.js"></script>
   <script src="js/services/shortcuts.js"></script>
+  <script src="js/data/templates.js"></script>
   <script src="js/services/projectManager.js"></script>
   <script src="js/pages/homeTheme.js"></script>
   <script src="js/pages/homeSettings.js"></script>

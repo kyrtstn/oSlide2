@@ -10,11 +10,17 @@
     const grid = document.getElementById('projects-grid')
     const list = document.getElementById('project-list')
 
-    document.querySelectorAll('#themes-section, #projects-section, #welcome').forEach(el => el.classList.add('hidden'))
+    document.querySelectorAll('#themes-section, #projects-section, #welcome, #section-templates').forEach(el => el.classList.add('hidden'))
 
     if (activeSection === 'themes') {
       themesSection.classList.remove('hidden')
       renderThemes()
+      return
+    }
+
+    if (activeSection === 'templates') {
+      document.getElementById('section-templates')?.classList.remove('hidden')
+      renderTemplateGallery()
       return
     }
 
@@ -174,6 +180,15 @@
 
     document.getElementById('open-file-btn')?.addEventListener('click', openFileDialog)
     document.getElementById('sidebar-settings')?.addEventListener('click', openSettings)
+
+    // Template filter buttons
+    document.querySelectorAll('.tf-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'))
+        btn.classList.add('active')
+        renderTemplateGallery(btn.dataset.cat)
+      })
+    })
 
     document.getElementById('dialog-close')?.addEventListener('click', closeDialog)
     document.getElementById('dialog-cancel')?.addEventListener('click', closeDialog)
@@ -474,6 +489,121 @@
   }
 
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') }
+
+  /**
+   * Loads user templates from config and merges with built-in
+   * @returns {Promise<Array>} All templates
+   */
+  async function getAllTemplates() {
+    const builtIn = window.SLIDE_TEMPLATES || []
+    let userTemplates = []
+    try {
+      if (window.electronAPI) {
+        const config = await window.electronAPI.getConfig()
+        userTemplates = config.userTemplates || []
+      }
+    } catch (e) { /* ignore */ }
+    return [...builtIn, ...userTemplates]
+  }
+
+  /**
+   * Renders the template gallery grid with optional category filter
+   * @param {string} [filterCat='all'] - Category to filter by
+   * @returns {Promise<void>}
+   */
+  async function renderTemplateGallery(filterCat) {
+    filterCat = filterCat || 'all'
+    const grid = document.getElementById('template-gallery')
+    if (!grid) return
+    const all = await getAllTemplates()
+    const filtered = filterCat === 'all'
+      ? all
+      : all.filter(t => t.category === filterCat)
+    grid.innerHTML = filtered.map(t => {
+      const isUser = t.id && t.id.startsWith('user_')
+      const slideCount = t.elements ? (Array.isArray(t.elements) && !t.elements[0]?.type ? t.elements.length : 1) : 1
+      return `
+      <div class="tpl-gallery-card" data-id="${t.id}">
+        <div class="tpl-preview" style="background:${t.color || '#2a2a2a'}">
+          <i data-lucide="${t.icon || 'file-text'}"></i>
+          <div class="tpl-preview-label">${esc(t.label)}</div>
+          ${isUser ? '<span class="tpl-user-badge">Kullanıcı</span>' : ''}
+        </div>
+        <div class="tpl-info">
+          <div class="tpl-name">${esc(t.label)}</div>
+          <div class="tpl-desc">${esc(t.description || '')}</div>
+          <div class="tpl-meta">${slideCount} slayt</div>
+        </div>
+        <button class="tpl-use-btn" onclick="window.useTemplate('${t.id}')">Kullan</button>
+      </div>`
+    }).join('')
+    if (window.lucide) lucide.createIcons()
+  }
+  window.renderTemplateGallery = renderTemplateGallery
+
+  /**
+   * Creates a new project from a template and opens it in the editor
+   * @param {string} templateId - Template ID
+   * @returns {Promise<void>}
+   */
+  async function useTemplate(templateId) {
+    const all = await getAllTemplates()
+    const tpl = all.find(t => t.id === templateId)
+    if (!tpl) return
+    const projectName = tpl.label + ' — ' + new Date().toLocaleDateString('tr')
+
+    // Multi-slide user template or single-slide built-in
+    const isMultiSlide = tpl.elements && Array.isArray(tpl.elements) && tpl.elements[0]?.background !== undefined
+    let slides
+    if (isMultiSlide) {
+      slides = tpl.elements.map(s => ({
+        ...s,
+        id: 's' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        elements: (s.elements || []).map(el => ({
+          ...el,
+          id: 'el_' + Math.random().toString(36).slice(2, 8)
+        }))
+      }))
+    } else {
+      slides = [{
+        id: 's' + Date.now(),
+        background: '#ffffff',
+        elements: (tpl.elements || []).map(el => ({
+          ...el,
+          id: 'el_' + Math.random().toString(36).slice(2, 8)
+        })),
+        transition: 'fade',
+        notes: ''
+      }]
+    }
+
+    try {
+      if (window.electronAPI && window.electronAPI.createProjectFile) {
+        const result = await ProjectManager.create(projectName, 'blank')
+        if (result) {
+          const filePath = await window.electronAPI.createProjectFile({
+            projectId: result.project.id,
+            name: result.project.name,
+            slideData: { version: '1.0', theme: 'default', slides }
+          })
+          if (filePath) result.project.path = filePath
+          window.electronAPI.openEditor({
+            _projectId: result.project.id,
+            _projectName: result.project.name,
+            _projectPath: result.project.path,
+            _projectTheme: null,
+            version: '1.0', theme: 'default', slides
+          })
+        }
+      } else {
+        Toast.error('electronAPI.createProjectFile not available', 'Template')
+      }
+    } catch (err) {
+      console.error('Template project creation failed:', err)
+      Toast.error(err.message, 'Template')
+    }
+  }
+  window.useTemplate = useTemplate
 
   async function init() {
     await ProjectManager.init()

@@ -210,9 +210,15 @@ html, body {
 /* ========== WORKSPACE ========== */
 #workspace {
   display: flex;
+  flex-direction: column;
   flex: 1;
   overflow: hidden;
   background: var(--bg-app);
+}
+#workspace-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
 /* ========== SIDEBAR ========== */
@@ -572,6 +578,16 @@ html, body {
   font-size: 11px;
   color: var(--text-hint);
   border-bottom: 0.5px solid var(--border-subtle);
+}
+#notes-status {
+  font-size: 9px;
+  color: var(--text-hint);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#notes-status.show {
+  opacity: 1;
+  color: var(--accent);
 }
 #notes-toggle {
   margin-left: auto;
@@ -1607,6 +1623,61 @@ input:checked + .toggle-track .toggle-thumb { left: 18px; background:var(--accen
 /* AI toggle button glow */
 #ai-toggle-btn.active { color: var(--accent); }
 #ai-toggle-btn.active svg { filter: drop-shadow(0 0 6px rgba(255,215,0,0.5)); }
+
+/* ========== SAVE TEMPLATE MODAL ========== */
+#save-template-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+}
+#save-template-overlay.hidden { display: none; }
+#save-template-modal {
+  background: var(--bg-surface);
+  border: 0.5px solid var(--border-default);
+  border-radius: 12px;
+  width: 420px;
+  overflow: hidden;
+}
+#save-template-head {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 0.5px solid var(--border-subtle);
+  font-size: 14px; font-weight: 500;
+  color: var(--text-primary);
+}
+#save-template-close {
+  background: none; border: none;
+  color: var(--text-hint); cursor: pointer; font-size: 16px;
+}
+#save-template-body {
+  padding: 16px 18px;
+}
+#save-template-body .form-group {
+  margin-bottom: 12px;
+}
+#save-template-body label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+#save-template-body input,
+#save-template-body select {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--bg-input);
+  border: 0.5px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+  font-family: inherit;
+}
+#save-template-body input:focus,
+#save-template-body select:focus {
+  border-color: var(--accent);
+}
 
 /* ========== TEMPLATE MODAL ========== */
 #template-overlay {

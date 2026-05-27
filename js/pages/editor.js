@@ -134,75 +134,24 @@ function loadProjectData(d) {
   startAutoSave();
 }
 
-const SLIDE_TEMPLATES = [
-  {
-    id: 'blank',
-    label: 'Boş',
-    icon: 'square',
-    elements: []
-  },
-  {
-    id: 'title-only',
-    label: 'Sadece Başlık',
-    icon: 'type',
-    elements: [
-      { type: 'title', content: 'Başlık', x: 60, y: 180,
-        width: 840, height: 80, fontSize: 52, textAlign: 'center',
-        bold: true }
-    ]
-  },
-  {
-    id: 'title-text',
-    label: 'Başlık + Metin',
-    icon: 'layout-list',
-    elements: [
-      { type: 'title', content: 'Başlık', x: 60, y: 60,
-        width: 840, height: 70, fontSize: 40, bold: true },
-      { type: 'text', content: 'İçerik metni buraya gelecek.',
-        x: 60, y: 150, width: 840, height: 300, fontSize: 20 }
-    ]
-  },
-  {
-    id: 'two-column',
-    label: 'İki Sütun',
-    icon: 'columns',
-    elements: [
-      { type: 'title', content: 'Başlık', x: 60, y: 40,
-        width: 840, height: 60, fontSize: 36, bold: true },
-      { type: 'text', content: 'Sol sütun metni.',
-        x: 60, y: 120, width: 390, height: 340, fontSize: 16 },
-      { type: 'text', content: 'Sağ sütun metni.',
-        x: 510, y: 120, width: 390, height: 340, fontSize: 16 }
-    ]
-  },
-  {
-    id: 'section',
-    label: 'Bölüm Başlığı',
-    icon: 'bookmark',
-    elements: [
-      { type: 'title', content: 'Bölüm', x: 60, y: 200,
-        width: 840, height: 80, fontSize: 56, textAlign: 'center',
-        bold: true },
-      { type: 'text', content: 'Alt başlık',
-        x: 60, y: 300, width: 840, height: 40, fontSize: 22,
-        textAlign: 'center' }
-    ]
-  }
-]
-
 function applyTemplate(templateId) {
-  const tpl = SLIDE_TEMPLATES.find(t => t.id === templateId);
+  const tpl = window.SLIDE_TEMPLATES?.find(t => t.id === templateId);
   if (!tpl) return;
   save();
   const bg = App.projectTheme?.canvasBg || '#ffffff';
   const s = {
     id: 's' + Date.now(),
     background: bg,
-    elements: tpl.elements.map(el => ({
-      ...EL_DEFAULTS[el.type] || {},
-      ...el,
-      id: id()
-    })),
+    elements: tpl.elements.map(el => {
+      const base = { ...EL_DEFAULTS[el.type] || {}, ...el, id: id() }
+      if (App.projectTheme) {
+        if (el.type === 'title') { base.color = App.projectTheme.titleColor || base.color }
+        if (el.type === 'text') { base.color = App.projectTheme.textColor || base.color }
+        base.animType = App.projectTheme.animType || base.animType
+        base.animDuration = App.projectTheme.animDuration || base.animDuration
+      }
+      return base
+    }),
     transition: 'fade',
     notes: ''
   };
@@ -211,21 +160,85 @@ function applyTemplate(templateId) {
   closeTemplateModal();
 }
 
+function templatePreviewHtml(tpl) {
+  const W = 160, H = 90
+  let els = ''
+  for (const el of tpl.elements) {
+    const x = Math.round(el.x * W / 960), y = Math.round(el.y * H / 540)
+    const w = Math.round(el.width * W / 960), h = Math.round(el.height * H / 540)
+    if (el.type === 'title' || el.type === 'text') {
+      const fs = Math.max(6, Math.round((el.fontSize || 16) * W / 960))
+      els += `<text x="${x}" y="${y + h / 2 + fs / 3}" font-size="${fs}" fill="${el.color || '#888'}" font-weight="${el.bold ? 'bold' : 'normal'}" text-anchor="${el.textAlign === 'center' ? 'middle' : 'start'}">${el.content || ''}</text>`
+    } else {
+      els += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${el.fill || '#ffd700'}" rx="${Math.round((el.borderRadius || 0) * W / 960)}"/>`
+    }
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="background:#f5f5f5;border-radius:4px">${els}</svg>`
+}
+
 function openTemplateModal() {
   const grid = document.getElementById('template-grid');
   if (!grid) return;
-  grid.innerHTML = SLIDE_TEMPLATES.map(t => `
+  grid.innerHTML = window.SLIDE_TEMPLATES.map(t => `
     <div class="tpl-card" onclick="applyTemplate('${t.id}')">
-      <i data-lucide="${t.icon}"></i>
+      ${templatePreviewHtml(t)}
       <span>${t.label}</span>
     </div>
   `).join('');
-  if (window.lucide) lucide.createIcons();
   document.getElementById('template-overlay')?.classList.remove('hidden');
 }
 
 function closeTemplateModal() {
   document.getElementById('template-overlay')?.classList.add('hidden');
+}
+
+function openSaveTemplateDialog() {
+  document.getElementById('st-name')?.focus()
+  document.getElementById('save-template-overlay')?.classList.remove('hidden')
+}
+
+function closeSaveTemplateDialog() {
+  document.getElementById('save-template-overlay')?.classList.add('hidden')
+}
+
+async function confirmSaveTemplate() {
+  const name = document.getElementById('st-name')?.value.trim()
+  const desc = document.getElementById('st-desc')?.value.trim()
+  const category = document.getElementById('st-category')?.value || 'temel'
+  const tagsStr = document.getElementById('st-tags')?.value.trim()
+  if (!name) { Toast.error('Şablon adı gerekli', 'Template'); return }
+
+  const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : []
+  const newTemplate = {
+    id: 'user_' + Date.now(),
+    label: name,
+    description: desc || '',
+    icon: 'file-text',
+    category,
+    tags,
+    color: '#2a2a2a',
+    elements: JSON.parse(JSON.stringify(App.slides.map(s => ({
+      ...s,
+      elements: s.elements.map(el => {
+        const { id, ...rest } = el
+        return { ...rest, id: 'el_' + Math.random().toString(36).slice(2, 8) }
+      })
+    }))))
+  }
+
+  try {
+    const config = await window.electronAPI.getConfig()
+    config.userTemplates = config.userTemplates || []
+    config.userTemplates.push(newTemplate)
+    await window.electronAPI.saveConfig(config)
+    Toast.show('Şablon kaydedildi: ' + name, Toast.SUCCESS, 2000)
+    closeSaveTemplateDialog()
+    document.getElementById('st-name').value = ''
+    document.getElementById('st-desc').value = ''
+    document.getElementById('st-tags').value = ''
+  } catch (err) {
+    Toast.error(err.message, 'Save Template')
+  }
 }
 
 function updateStatusBar() {
@@ -281,15 +294,15 @@ function initShortcuts() {
     // New slide (always works)
     if (e.ctrlKey && e.shiftKey && e.key === 'N') {
       e.preventDefault();
-      openTemplateModal();
+      addSlide();
       return;
     }
 
-    // Slide navigation — only when not typing in input/textarea
+    // Slide navigation — only when not typing and no element selected
     const tag = document.activeElement?.tagName;
     const isTyping = tag === 'INPUT' || tag === 'TEXTAREA'
       || document.activeElement?.isContentEditable;
-    if (!isTyping) {
+    if (!isTyping && !App.sel) {
       if (e.key === 'ArrowUp' || (e.key === 'ArrowLeft' && !e.shiftKey)) {
         if (App.cur > 0) { e.preventDefault(); selectSlide(App.cur - 1); return; }
       }
@@ -321,7 +334,8 @@ function init() {
 
   newProject();
 
-  document.getElementById('add-slide-btn')?.addEventListener('click', openTemplateModal);
+  document.getElementById('add-slide-btn')?.addEventListener('click', addSlide);
+  document.getElementById('template-btn')?.addEventListener('click', openTemplateModal);
   document.getElementById('dup-slide-btn')?.addEventListener('click', dupSlide);
   document.getElementById('panel-close')?.addEventListener('click', hidePanel);
 
@@ -395,10 +409,18 @@ function init() {
   // Notes
   const notesInput = document.getElementById('notes-input');
   const notesToggle = document.getElementById('notes-toggle');
+  const notesStatus = document.getElementById('notes-status');
+
+  function updateNotesStatus() {
+    if (!notesStatus) return;
+    notesStatus.classList.toggle('show', App.dirty);
+    notesStatus.textContent = App.dirty ? '● Değişti' : '';
+  }
 
   function syncNotes() {
     if (!notesInput) return;
     notesInput.value = App.slides[App.cur]?.notes || '';
+    updateNotesStatus();
   }
   window.syncNotes = syncNotes;
 
@@ -406,6 +428,7 @@ function init() {
     if (App.slides[App.cur]) {
       App.slides[App.cur].notes = notesInput.value;
       App.dirty = true;
+      updateNotesStatus();
     }
   });
   notesToggle?.addEventListener('click', () => {
@@ -416,6 +439,18 @@ function init() {
   document.getElementById('template-close')?.addEventListener('click', closeTemplateModal);
   document.getElementById('template-overlay')?.addEventListener('click', e => {
     if (e.target.id === 'template-overlay') closeTemplateModal();
+  });
+
+  // Save as Template
+  document.getElementById('save-as-template-btn')?.addEventListener('click', openSaveTemplateDialog);
+  document.getElementById('save-template-close')?.addEventListener('click', closeSaveTemplateDialog);
+  document.getElementById('save-template-cancel')?.addEventListener('click', closeSaveTemplateDialog);
+  document.getElementById('save-template-confirm')?.addEventListener('click', confirmSaveTemplate);
+  document.getElementById('save-template-overlay')?.addEventListener('click', e => {
+    if (e.target.id === 'save-template-overlay') closeSaveTemplateDialog();
+  });
+  document.getElementById('st-name')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmSaveTemplate();
   });
 
   if (window.lucide) lucide.createIcons();
@@ -574,7 +609,6 @@ window.loadProjectData = loadProjectData;
 window.updateStatusBar = updateStatusBar;
 window.openTemplateModal = openTemplateModal;
 window.applyTemplate = applyTemplate;
-window.SLIDE_TEMPLATES = SLIDE_TEMPLATES;
 
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

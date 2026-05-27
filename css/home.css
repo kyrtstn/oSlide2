@@ -1120,6 +1120,104 @@ html, body {
   color: var(--text-muted);
 }
 
+.home-section { padding: 0; }
+.section-head { margin-bottom: 16px; }
+.section-head h2 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.section-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
+.template-filter {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.tf-btn {
+  background: var(--bg-tertiary);
+  border: 0.5px solid var(--border);
+  border-radius: 99px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.tf-btn.active {
+  background: var(--accent);
+  color: #111;
+  border-color: var(--accent);
+}
+.template-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.tpl-gallery-card {
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.tpl-gallery-card:hover {
+  border-color: var(--accent);
+}
+.tpl-preview {
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+.tpl-preview i {
+  font-size: 28px;
+  color: rgba(255,255,255,0.6);
+}
+.tpl-preview-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tpl-info {
+  padding: 10px 12px 6px;
+  flex: 1;
+}
+.tpl-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+.tpl-desc {
+  font-size: 11px;
+  color: var(--text-hint);
+  line-height: 1.5;
+}
+.tpl-meta { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+.tpl-user-badge {
+  position: absolute; top: 4px; right: 4px;
+  font-size: 8px; background: var(--accent); color: #111;
+  padding: 1px 5px; border-radius: 3px; text-transform: uppercase;
+  font-weight: 600; letter-spacing: 0.03em;
+}
+.tpl-use-btn {
+  margin: 8px 12px 12px;
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 0;
+  cursor: pointer;
+  width: calc(100% - 24px);
+  font-family: inherit;
+}
+.tpl-use-btn:hover { opacity: 0.9; }
+
 .empty-state .icon {
   font-size: 40px;
   margin-bottom: 12px;

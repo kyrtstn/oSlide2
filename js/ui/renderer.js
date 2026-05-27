@@ -227,7 +227,8 @@ function renderThumbs() {
           .forEach(el => el.classList.remove('drag-over'));
         t.classList.add('drag-over');
       });
-      t.addEventListener('dragleave', () => {
+      t.addEventListener('dragleave', e => {
+        if (t.contains(e.relatedTarget)) return;
         t.classList.remove('drag-over');
       });
       t.addEventListener('drop', e => {
