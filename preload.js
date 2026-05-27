@@ -59,6 +59,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('presentation-data', (event, data) => callback(data));
   },
 
+  // File event listeners
+  onFileSaved: (callback) => {
+    ipcRenderer.on('file-saved', (event, data) => callback(data));
+  },
+  onFileError: (callback) => {
+    ipcRenderer.on('file-error', (event, data) => callback(data));
+  },
+
   // Window control
   closeWindow: () => window.close(),
 

@@ -398,6 +398,16 @@ function init() {
   });
 
   if (window.electronAPI) {
+    if (window.electronAPI.onFileSaved) {
+      window.electronAPI.onFileSaved(function(_ref) {
+        Toast.show('Kaydedildi: ' + _ref.path, Toast.SUCCESS, 2000)
+      })
+    }
+    if (window.electronAPI.onFileError) {
+      window.electronAPI.onFileError(function(_ref2) {
+        Toast.error(_ref2.message, 'File Operation')
+      })
+    }
     window.electronAPI.onMenuAction(action => {
       switch (action) {
         case 'new': newProject(); break;

@@ -306,30 +306,45 @@ ipcMain.handle('return-home', () => {
 
 /** Saves data to file (or opens save dialog if no path) @returns {string|null} */
 ipcMain.handle('save-file', async (event, data, filePath) => {
-  if (filePath) {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-    return filePath;
+  try {
+    if (filePath) {
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+      editorWindow?.webContents.send('file-saved', { path: filePath });
+      return filePath;
+    }
+    const result = await dialog.showSaveDialog(editorWindow || homeWindow, {
+      filters: [{ name: 'Slide Projesi', extensions: ['slidelab'] }]
+    });
+    if (!result.canceled && result.filePath) {
+      fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2), 'utf-8');
+      editorWindow?.webContents.send('file-saved', { path: result.filePath });
+      return result.filePath;
+    }
+    return null;
+  } catch (err) {
+    console.error('save-file error:', err);
+    editorWindow?.webContents.send('file-error', { message: 'Save failed: ' + err.message, context: 'File Save' });
+    throw err;
   }
-  const result = await dialog.showSaveDialog(editorWindow || homeWindow, {
-    filters: [{ name: 'Slide Projesi', extensions: ['slidelab'] }]
-  });
-  if (!result.canceled && result.filePath) {
-    fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2), 'utf-8');
-    return result.filePath;
-  }
-  return null;
 });
 
 /** Opens save dialog and writes data @returns {string|null} */
 ipcMain.handle('save-file-as', async (event, data) => {
-  const result = await dialog.showSaveDialog(editorWindow || homeWindow, {
-    filters: [{ name: 'Slide Projesi', extensions: ['slidelab'] }]
-  });
-  if (!result.canceled && result.filePath) {
-    fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2), 'utf-8');
-    return result.filePath;
+  try {
+    const result = await dialog.showSaveDialog(editorWindow || homeWindow, {
+      filters: [{ name: 'Slide Projesi', extensions: ['slidelab'] }]
+    });
+    if (!result.canceled && result.filePath) {
+      fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2), 'utf-8');
+      editorWindow?.webContents.send('file-saved', { path: result.filePath });
+      return result.filePath;
+    }
+    return null;
+  } catch (err) {
+    console.error('save-file-as error:', err);
+    editorWindow?.webContents.send('file-error', { message: 'Save failed: ' + err.message, context: 'File Save' });
+    throw err;
   }
-  return null;
 });
 
 /** Opens .slidelab file picker @returns {{data:Object, filePath:string, fileName:string}|null} */
@@ -428,10 +443,11 @@ ipcMain.handle('start-presentation', (event, data) => {
 
 /** Renders HTML to PDF and saves via dialog @returns {boolean} */
 ipcMain.handle('export-pdf', async (event, htmlContent) => {
-  const result = await dialog.showSaveDialog(editorWindow, {
-    filters: [{ name: 'PDF', extensions: ['pdf'] }]
-  });
-  if (!result.canceled && result.filePath) {
+  try {
+    const result = await dialog.showSaveDialog(editorWindow, {
+      filters: [{ name: 'PDF', extensions: ['pdf'] }]
+    });
+    if (!result.canceled && result.filePath) {
     const { BrowserWindow: OffscreenWindow } = require('electron');
     const printWin = new OffscreenWindow({
       width: 1280, height: 720, show: false,
@@ -441,15 +457,22 @@ ipcMain.handle('export-pdf', async (event, htmlContent) => {
     const pdfData = await printWin.webContents.printToPDF({ printBackground: true });
     fs.writeFileSync(result.filePath, pdfData);
     printWin.close();
+    editorWindow?.webContents.send('file-saved', { path: result.filePath });
     return true;
   }
   return false;
+  } catch (err) {
+    console.error('export-pdf error:', err);
+    editorWindow?.webContents.send('file-error', { message: 'PDF export failed: ' + err.message, context: 'PDF Export' });
+    return false;
+  }
 });
 
 /** Renders each slide as PNG and saves to chosen directory @returns {boolean} */
 ipcMain.handle('export-png', async (event, data) => {
-  const result = await dialog.showOpenDialog(editorWindow, { properties: ['openDirectory'] });
-  if (!result.canceled && result.filePaths.length > 0) {
+  try {
+    const result = await dialog.showOpenDialog(editorWindow, { properties: ['openDirectory'] });
+    if (!result.canceled && result.filePaths.length > 0) {
     const dir = result.filePaths[0];
     const { BrowserWindow: OffscreenWindow } = require('electron');
     for (let i = 0; i < data.slides.length; i++) {
@@ -465,9 +488,15 @@ ipcMain.handle('export-png', async (event, data) => {
       fs.writeFileSync(path.join(dir, `slide-${String(i + 1).padStart(3, '0')}.png`), pngData);
       printWin.close();
     }
+    editorWindow?.webContents.send('file-saved', { path: dir });
     return true;
   }
   return false;
+  } catch (err) {
+    console.error('export-png error:', err);
+    editorWindow?.webContents.send('file-error', { message: 'PNG export failed: ' + err.message, context: 'PNG Export' });
+    return false;
+  }
 });
 
 /** @param {string} s @returns {string} HTML-escaped string */

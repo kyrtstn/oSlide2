@@ -172,6 +172,7 @@ function initAI() {
       replaceMsg(status, 'alert-triangle', I18n.t('ai.error') + ': ' + e.message)
       status.className = 'ai-msg err'
       aiMsgs.push({ role: 'assistant', content: '⚠️ ' + I18n.t('ai.error') + ': ' + e.message })
+      Toast.error(e, 'AI Chat')
     }
     aiBusy = false
     typing.classList.add('hidden')
@@ -275,12 +276,15 @@ function initAI() {
     await new Promise(r => setTimeout(r, 200))
 
     typing.classList.remove('hidden')
+    const loader = Toast.show('Slaytlar oluşturuluyor...', Toast.LOADING, 0)
     try {
       const ctx = buildSlideContext()
       const slides = await AI.generateSlides(t, c, ctx)
       steps[0].remove()
+      loader.dismiss()
 
       if (slides?.length) {
+        Toast.show(slides.length + ' slayt oluşturuldu', Toast.SUCCESS, 3000)
         const th = App.projectTheme
         const bg = th?.canvasBg || '#ffffff'
         const tc = th?.titleColor || '#222'
@@ -344,6 +348,8 @@ function initAI() {
       }
     } catch (e) {
       steps[0]?.remove()
+      loader.dismiss()
+      Toast.error(e, 'Slide Generation')
       const w = agentMsg('alert-triangle', I18n.t('ai.error'))
       await new Promise(r => setTimeout(r, 2000))
       w.remove()
@@ -382,6 +388,7 @@ function initAI() {
     } catch (e) {
       replaceMsg(status, 'alert-triangle', I18n.t('ai.error') + ': ' + e.message)
       status.className = 'ai-msg err'
+      Toast.error(e, 'AI Smart Action')
     }
     aiBusy = false
     typing.classList.add('hidden')
