@@ -149,7 +149,7 @@ All shortcuts are customizable in Settings > Shortcuts.
 
 ## TODO
 
-- [ ] Slide templates & layouts
+- [x] Slide templates & layouts
 - [ ] Charts & data visualization
 - [ ] Cloud sync / backup
 - [ ] Collaborative editing
@@ -158,5 +158,5 @@ All shortcuts are customizable in Settings > Shortcuts.
 - [ ] Video export (MP4/WebM)
 - [ ] Custom themes marketplace
 - [ ] PDF import
-- [ ] Undo/redo for element position changes during drag
+- [x] Undo/redo for element position changes during drag
 
