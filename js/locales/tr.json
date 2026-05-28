@@ -233,5 +233,7 @@
   "ai.actionLabel": "AI işlemi",
   "ai.defaultTopic": "Sunum konusu",
   "ai.thinking": "Düşünüyor...",
-  "ai.error": "AI hatası"
+  "ai.error": "AI hatası",
+  "home.settings": "Ayarlar",
+  "home.themeGallery": "Tema Galerisi"
 }
